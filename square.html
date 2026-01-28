@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fusion Square - 5×5</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; overflow: hidden; touch-action: none; }
+        body {
+            background-color: #12131a;
+            min-height: 100vh; min-height: -webkit-fill-available;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        h1 {
+            color: rgba(180, 180, 190, 0.6);
+            font-weight: 300;
+            font-size: 1.2rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+        }
+        .info {
+            color: rgba(180, 180, 190, 0.5);
+            font-size: 0.75rem;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .info span { display: flex; align-items: center; gap: 5px; }
+        .info .dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            border: 1px solid rgba(100,100,110,0.5);
+        }
+        .dot.white { background: rgba(180, 180, 190, 0.4); }
+        .dot.silver { background: linear-gradient(135deg, #7ec8e3, #b8d4e8, #7ec8e3); box-shadow: 0 0 4px rgba(126, 200, 227, 0.5); }
+        .dot.gold { background: linear-gradient(135deg, #b8860b, #ffd700, #b8860b); box-shadow: 0 0 4px rgba(255, 215, 0, 0.5); }
+        .dot.diamond { background: linear-gradient(135deg, #06b6d4, #fff, #06b6d4); box-shadow: 0 0 6px rgba(6, 182, 212, 0.7); }
+        .dot.emerald { background: linear-gradient(135deg, #059669, #34d399, #059669); box-shadow: 0 0 6px rgba(52, 211, 153, 0.7); }
+        .dot.cosmic { background: conic-gradient(from 0deg, #ff006e, #8338ec, #06b6d4, #34d399, #ffd700, #ff006e); box-shadow: 0 0 8px rgba(131, 56, 236, 0.8); animation: cosmicDotSpin 3s linear infinite; }
+        @keyframes cosmicDotSpin { to { transform: rotate(360deg); } }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(5, var(--cell));
+            grid-template-rows: repeat(5, var(--cell));
+            gap: var(--gap);
+            --cell: min(70px, 16vw);
+            --gap: 8px;
+        }
+        .cell { width: var(--cell); height: var(--cell); position: relative; }
+        .square {
+            width: 100%; height: 100%;
+            background-color: transparent;
+            border: 1px solid rgba(180, 180, 190, 0.35);
+            border-radius: 12px;
+            position: absolute;
+            top: 0; left: 0;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        .square:hover { border-color: rgba(180, 180, 190, 0.6); }
+        .square.empty { border-style: dashed; border-color: rgba(180, 180, 190, 0.2); cursor: default; }
+        .square.empty:hover { border-color: rgba(180, 180, 190, 0.3); }
+        .square svg { width: 100%; height: 100%; }
+        svg .separator { stroke-width: 1; }
+        svg line.icon, svg path.icon, svg circle.icon { stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+
+        /* États */
+        .square.white { border-color: rgba(180, 180, 190, 0.35); }
+        .square.white svg line.icon, .square.white svg path.icon, .square.white svg circle.icon { stroke: rgba(180, 180, 190, 0.5); }
+        .square.white svg circle.point { fill: rgba(180, 180, 190, 0.5); }
+        .square.white svg .separator { stroke: rgba(180, 180, 190, 0.3); }
+
+        .square.silver { border-color: rgba(126, 200, 227, 0.7); box-shadow: 0 0 15px rgba(126, 200, 227, 0.25), inset 0 0 20px rgba(126, 200, 227, 0.05); }
+        .square.silver svg line.icon, .square.silver svg path.icon, .square.silver svg circle.icon { stroke: #7ec8e3; filter: drop-shadow(0 0 3px rgba(126, 200, 227, 0.5)); }
+        .square.silver svg circle.point { fill: #7ec8e3; filter: drop-shadow(0 0 3px rgba(126, 200, 227, 0.5)); }
+        .square.silver svg .separator { stroke: rgba(126, 200, 227, 0.4); }
+
+        .square.gold { border-color: rgba(255, 215, 0, 0.7); box-shadow: 0 0 20px rgba(255, 215, 0, 0.3), inset 0 0 20px rgba(255, 215, 0, 0.05); }
+        .square.gold svg line.icon, .square.gold svg path.icon, .square.gold svg circle.icon { stroke: #ffd700; filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.6)); }
+        .square.gold svg circle.point { fill: #ffd700; filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.6)); }
+        .square.gold svg .separator { stroke: rgba(255, 215, 0, 0.4); }
+
+        .square.diamond { border-color: rgba(6, 182, 212, 0.9); box-shadow: 0 0 30px rgba(6, 182, 212, 0.5), 0 0 50px rgba(255, 255, 255, 0.2), inset 0 0 30px rgba(6, 182, 212, 0.1); animation: diamondPulse 2s ease-in-out infinite; }
+        .square.diamond svg line.icon, .square.diamond svg path.icon, .square.diamond svg circle.icon { stroke: #22d3ee; filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.8)) drop-shadow(0 0 10px rgba(255, 255, 255, 0.4)); }
+        .square.diamond svg circle.point { fill: #22d3ee; filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.8)); }
+        .square.diamond svg .separator { stroke: rgba(34, 211, 238, 0.6); }
+        @keyframes diamondPulse {
+            0%, 100% { box-shadow: 0 0 30px rgba(6, 182, 212, 0.5), 0 0 50px rgba(255, 255, 255, 0.2), inset 0 0 30px rgba(6, 182, 212, 0.1); }
+            50% { box-shadow: 0 0 40px rgba(6, 182, 212, 0.7), 0 0 60px rgba(255, 255, 255, 0.3), inset 0 0 40px rgba(6, 182, 212, 0.15); }
+        }
+
+        .square.emerald { border-color: rgba(52, 211, 153, 0.9); box-shadow: 0 0 25px rgba(5, 150, 105, 0.5), 0 0 40px rgba(52, 211, 153, 0.3), inset 0 0 25px rgba(52, 211, 153, 0.1); animation: emeraldGlow 2.5s ease-in-out infinite; }
+        .square.emerald svg line.icon, .square.emerald svg path.icon, .square.emerald svg circle.icon { stroke: #34d399; filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.9)) drop-shadow(0 0 12px rgba(5, 150, 105, 0.5)); }
+        .square.emerald svg circle.point { fill: #34d399; filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.9)); }
+        .square.emerald svg .separator { stroke: rgba(52, 211, 153, 0.6); }
+        @keyframes emeraldGlow {
+            0%, 100% { box-shadow: 0 0 25px rgba(5, 150, 105, 0.5), 0 0 40px rgba(52, 211, 153, 0.3), inset 0 0 25px rgba(52, 211, 153, 0.1); }
+            50% { box-shadow: 0 0 35px rgba(5, 150, 105, 0.7), 0 0 55px rgba(52, 211, 153, 0.4), inset 0 0 35px rgba(52, 211, 153, 0.15); }
+        }
+
+        .square.cosmic { border: 2px solid transparent; background: linear-gradient(#12131a, #12131a) padding-box, conic-gradient(from var(--cosmic-angle, 0deg), #ff006e, #8338ec, #06b6d4, #34d399, #ffd700, #ff006e) border-box; box-shadow: 0 0 40px rgba(131, 56, 236, 0.6), 0 0 60px rgba(255, 0, 110, 0.3), 0 0 80px rgba(6, 182, 212, 0.3), inset 0 0 40px rgba(131, 56, 236, 0.15); animation: cosmicRotate 4s linear infinite, cosmicPulse 2s ease-in-out infinite; }
+        .square.cosmic svg line.icon, .square.cosmic svg path.icon, .square.cosmic svg circle.icon { stroke: #c4b5fd; filter: drop-shadow(0 0 8px rgba(131, 56, 236, 0.9)) drop-shadow(0 0 12px rgba(255, 0, 110, 0.6)); animation: cosmicIconShift 3s ease-in-out infinite; }
+        .square.cosmic svg circle.point { fill: #c4b5fd; filter: drop-shadow(0 0 8px rgba(131, 56, 236, 0.9)); animation: cosmicPointPulse 1.5s ease-in-out infinite; }
+        .square.cosmic svg .separator { stroke: rgba(196, 181, 253, 0.7); }
+        @property --cosmic-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+        @keyframes cosmicRotate { to { --cosmic-angle: 360deg; } }
+        @keyframes cosmicPulse {
+            0%, 100% { box-shadow: 0 0 40px rgba(131, 56, 236, 0.6), 0 0 60px rgba(255, 0, 110, 0.3), 0 0 80px rgba(6, 182, 212, 0.3), inset 0 0 40px rgba(131, 56, 236, 0.15); }
+            50% { box-shadow: 0 0 55px rgba(131, 56, 236, 0.8), 0 0 80px rgba(255, 0, 110, 0.5), 0 0 100px rgba(6, 182, 212, 0.4), inset 0 0 50px rgba(131, 56, 236, 0.2); }
+        }
+        @keyframes cosmicIconShift { 0%, 100% { stroke: #c4b5fd; } 33% { stroke: #22d3ee; } 66% { stroke: #f472b6; } }
+        @keyframes cosmicPointPulse { 0%, 100% { fill: #c4b5fd; } 50% { fill: #f472b6; } }
+
+        .square.fusing { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease; }
+        .square.fused-result { animation: fusionAppear 0.5s cubic-bezier(0.2, 0, 0.2, 1); }
+        @keyframes fusionAppear { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+
+        .controls { display: flex; gap: 12px; }
+        button {
+            background: transparent;
+            border: 1px solid rgba(180, 180, 190, 0.35);
+            color: rgba(180, 180, 190, 0.7);
+            padding: 8px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            letter-spacing: 0.1em;
+            transition: all 0.2s;
+        }
+        button:hover { border-color: rgba(180, 180, 190, 0.6); color: rgba(220, 220, 230, 0.9); }
+        .stats { color: rgba(180, 180, 190, 0.5); font-size: 0.75rem; }
+    </style>
+</head>
+<body>
+    <h1>Fusion Square 5×5</h1>
+    <div class="info">
+        <span><div class="dot white"></div>Blanc</span>
+        <span><div class="dot silver"></div>Argent</span>
+        <span><div class="dot gold"></div>Or</span>
+        <span><div class="dot diamond"></div>Diamant</span>
+        <span><div class="dot emerald"></div>Émeraude</span>
+        <span><div class="dot cosmic"></div>Cosmique</span>
+    </div>
+    <div class="grid" id="grid"></div>
+    <div class="stats" id="stats">25 dominos</div>
+    <div class="controls">
+        <button onclick="resetGame()">Reset</button>
+        <button onclick="shuffle()">Mélanger</button>
+    </div>
+
+    <script>
+        const ICONS = {
+            chevron: { f1: 'M20 12L45 32L70 12', f2: 'M20 32L45 12L70 32', t: 'path' },
+            circle: { f1: '45,22,12', f2: '45,22,12', t: 'circle' },
+            twoCircles: { f1: '30,22,8|60,22,8', f2: '30,22,8|60,22,8', t: 'circles' },
+            line: { f1: '15,22,75,22', f2: '15,22,75,22', t: 'line' },
+            threeLines: { f1: '25,10,25,34|45,10,45,34|65,10,65,34', f2: '25,10,25,34|45,10,45,34|65,10,65,34', t: 'lines' },
+            twoPoints: { f1: '30,22,4|60,22,4', f2: '30,22,4|60,22,4', t: 'points' },
+            threePoints: { f1: '45,10,4|30,32,4|60,32,4', f2: '45,34,4|30,12,4|60,12,4', t: 'points' },
+            wave: { f1: 'M10 14Q28 36 45 22Q62 8 80 30', f2: 'M10 30Q28 8 45 22Q62 36 80 14', t: 'path' }
+        };
+        const ICON_KEYS = Object.keys(ICONS);
+        const COLS = 5, ROWS = 5, TOTAL = 25;
+        const STATE_ORDER = ['white', 'silver', 'gold', 'diamond', 'emerald', 'cosmic'];
+
+        let dominos = [], grid = document.getElementById('grid');
+        let isAnimating = false, isLocalRotating = false, isRotatingDomino = false;
+        let continuousState = null, continuousTimer = null, dragState = null;
+        const ROTATION_SPEED = 800;
+
+        function renderIcon(icon, isFace2) {
+            const d = ICONS[icon], data = isFace2 ? d.f2 : d.f1;
+            if (d.t === 'path') return `<path class="icon" d="${data}"/>`;
+            if (d.t === 'circle') { const [cx,cy,r] = data.split(','); return `<circle class="icon" cx="${cx}" cy="${cy}" r="${r}"/>`; }
+            if (d.t === 'line') { const [x1,y1,x2,y2] = data.split(','); return `<line class="icon" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`; }
+            return data.split('|').map(p => {
+                const v = p.split(',');
+                return d.t === 'circles' || d.t === 'points' 
+                    ? `<circle class="${d.t === 'points' ? 'point' : 'icon'}" cx="${v[0]}" cy="${v[1]}" r="${v[2]}"/>` 
+                    : `<line class="icon" x1="${v[0]}" y1="${v[1]}" x2="${v[2]}" y2="${v[3]}"/>`;
+            }).join('');
+        }
+
+        function renderDomino(d) {
+            return `<svg viewBox="0 0 90 90"><line class="separator" x1="0" y1="45" x2="90" y2="45"/><g>${renderIcon(d.face1, false)}</g><g transform="translate(0,45)">${renderIcon(d.face2, true)}</g></svg>`;
+        }
+
+        function render() {
+            grid.innerHTML = '';
+            for (let i = 0; i < TOTAL; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                const div = document.createElement('div');
+                div.dataset.index = i;
+                if (dominos[i]) {
+                    div.className = `square ${dominos[i].state}`;
+                    div.innerHTML = renderDomino(dominos[i]);
+                    div.style.transform = `rotate(${dominos[i].rotation}deg)`;
+                } else {
+                    div.className = 'square empty';
+                }
+                cell.appendChild(div);
+                grid.appendChild(cell);
+            }
+            updateStats();
+        }
+
+        function getPos(i) { return { x: i % COLS, y: Math.floor(i / COLS) }; }
+        function getIndex(x, y) { return (x < 0 || x >= COLS || y < 0 || y >= ROWS) ? -1 : y * COLS + x; }
+
+        function detectDiag(dx, dy) {
+            const ax = Math.abs(dx), ay = Math.abs(dy);
+            if (ax < 15 || ay < 15 || ax/ay < 0.5 || ax/ay > 2) return null;
+            return dy < 0 ? (dx > 0 ? 'ur' : 'ul') : (dx > 0 ? 'dr' : 'dl');
+        }
+
+        function getGroup(x, y, dir) {
+            const offsets = { ur: [0, -1], ul: [-1, -1], dr: [0, 0], dl: [-1, 0] };
+            const [ox, oy] = offsets[dir];
+            const tx = x + ox, ty = y + oy;
+            if (tx < 0 || tx > COLS - 2 || ty < 0 || ty > ROWS - 2) return null;
+            return [getIndex(tx, ty), getIndex(tx + 1, ty), getIndex(tx, ty + 1), getIndex(tx + 1, ty + 1)];
+        }
+
+        function isClockwise(dir) { return dir === 'ur' || dir === 'dr'; }
+
+        function stopContinuous() {
+            if (continuousTimer) { clearTimeout(continuousTimer); continuousTimer = null; }
+            continuousState = null;
+        }
+
+        function executeRotation(indices, clockwise, callback) {
+            if (isLocalRotating || isRotatingDomino) return;
+            isLocalRotating = true;
+
+            const cells = indices.map((idx, i) => ({
+                el: grid.children[idx].querySelector('.square'),
+                domino: dominos[idx],
+                sx: (idx % COLS), sy: Math.floor(idx / COLS)
+            }));
+
+            const map = clockwise ? [2, 0, 3, 1] : [1, 3, 0, 2];
+            cells.forEach((c, i) => {
+                const ti = map[i];
+                c.tx = indices[ti] % COLS;
+                c.ty = Math.floor(indices[ti] / COLS);
+            });
+
+            const duration = continuousState ? ROTATION_SPEED * 0.7 : ROTATION_SPEED * 0.5;
+            const start = performance.now();
+            const cellSize = grid.children[0].offsetWidth;
+            const gap = parseFloat(getComputedStyle(grid).gap) || 8;
+
+            function animate(t) {
+                const p = Math.min((t - start) / duration, 1);
+                const e = 1 - Math.pow(1 - p, 3);
+                cells.forEach(c => {
+                    if (c.el) {
+                        const dx = (c.tx - c.sx) * (cellSize + gap) * e;
+                        const dy = (c.ty - c.sy) * (cellSize + gap) * e;
+                        c.el.style.transform = `translate(${dx}px, ${dy}px) rotate(${c.domino?.rotation || 0}deg)`;
+                    }
+                });
+                if (p < 1) requestAnimationFrame(animate);
+                else finishRotation(indices, clockwise, callback);
+            }
+            requestAnimationFrame(animate);
+        }
+
+        function finishRotation(indices, clockwise, callback) {
+            const saved = indices.map(i => dominos[i]);
+            const map = clockwise ? [2, 0, 3, 1] : [1, 3, 0, 2];
+            for (let i = 0; i < 4; i++) dominos[indices[map[i]]] = saved[i];
+            render();
+            isLocalRotating = false;
+            setTimeout(checkFusions, 50);
+            if (callback) callback();
+        }
+
+        function attemptRotation(x, y, dx, dy) {
+            if (isRotatingDomino) return false;
+            const dir = detectDiag(dx, dy);
+            if (!dir) return false;
+            const group = getGroup(x, y, dir);
+            if (!group || !group.some(i => dominos[i])) return false;
+
+            continuousState = { x, y, dir };
+            (function step() {
+                if (!continuousState) return;
+                const g = getGroup(continuousState.x, continuousState.y, continuousState.dir);
+                if (!g || !g.some(i => dominos[i])) { stopContinuous(); return; }
+                executeRotation(g, isClockwise(continuousState.dir), () => {
+                    if (continuousState) continuousTimer = setTimeout(step, ROTATION_SPEED * 0.3);
+                });
+            })();
+            return true;
+        }
+
+        function handleStart(e) {
+            if (isAnimating) return;
+            if (continuousState) { stopContinuous(); return; }
+            const touch = e.touches?.[0] || e;
+            const target = e.target.closest('.square');
+            if (!target) return;
+            const idx = parseInt(target.dataset.index);
+            const pos = getPos(idx);
+            dragState = { idx, x: pos.x, y: pos.y, sx: touch.clientX, sy: touch.clientY, moved: false, isEmpty: !dominos[idx] };
+            e.preventDefault();
+        }
+
+        function handleMove(e) {
+            if (!dragState || dragState.moved) return;
+            const touch = e.touches?.[0] || e;
+            const dx = touch.clientX - dragState.sx, dy = touch.clientY - dragState.sy;
+            if (detectDiag(dx, dy)) {
+                dragState.moved = true;
+                attemptRotation(dragState.x, dragState.y, dx, dy);
+            }
+            e.preventDefault();
+        }
+
+        function handleEnd() {
+            if (continuousState) stopContinuous();
+            if (dragState && !dragState.moved && !dragState.isEmpty) rotateDomino(dragState.idx);
+            dragState = null;
+        }
+
+        function rotateDomino(idx) {
+            const d = dominos[idx];
+            if (!d || isAnimating || isLocalRotating || isRotatingDomino) return;
+            isRotatingDomino = true;
+            d.rotation += 90;
+            const el = grid.children[idx].querySelector('.square');
+            if (el) {
+                el.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+                el.style.transform = `rotate(${d.rotation - 45}deg) scale(0.85)`;
+                setTimeout(() => {
+                    el.style.transform = `rotate(${d.rotation}deg) scale(1)`;
+                    setTimeout(() => { isRotatingDomino = false; checkFusions(); }, 100);
+                }, 200);
+            } else isRotatingDomino = false;
+        }
+
+        function getExposed(d, dir) {
+            const r = ((d.rotation % 360) + 360) % 360;
+            const map = { 0: { top: 'face1', bottom: 'face2' }, 90: { right: 'face1', left: 'face2' }, 180: { top: 'face2', bottom: 'face1' }, 270: { right: 'face2', left: 'face1' } };
+            return map[r]?.[dir] ? d[map[r][dir]] : null;
+        }
+
+        function getRemaining(d, exc) {
+            const r = ((d.rotation % 360) + 360) % 360;
+            const map = { 0: { top: 'face2', bottom: 'face1' }, 90: { right: 'face2', left: 'face1' }, 180: { top: 'face1', bottom: 'face2' }, 270: { right: 'face1', left: 'face2' } };
+            return map[r]?.[exc] ? d[map[r][exc]] : null;
+        }
+
+        function checkFusions() {
+            if (isAnimating || isLocalRotating) return;
+            for (let i = 0; i < TOTAL; i++) {
+                if (!dominos[i]) continue;
+                const { x, y } = getPos(i);
+                const checks = [
+                    { ni: getIndex(x + 1, y), d1: 'right', d2: 'left', dir: 'h' },
+                    { ni: getIndex(x, y + 1), d1: 'bottom', d2: 'top', dir: 'v' }
+                ];
+                for (const { ni, d1, d2, dir } of checks) {
+                    if (ni === -1 || !dominos[ni]) continue;
+                    const f1 = getExposed(dominos[i], d1), f2 = getExposed(dominos[ni], d2);
+                    if (f1 && f2 && f1 === f2) { performFusion(i, ni, dir); return; }
+                }
+            }
+        }
+
+        function performFusion(i1, i2, dir) {
+            isAnimating = true;
+            const d1 = dominos[i1], d2 = dominos[i2];
+            const el1 = grid.children[i1].querySelector('.square'), el2 = grid.children[i2].querySelector('.square');
+            if (!el1 || !el2) { isAnimating = false; return; }
+
+            const nf1 = getRemaining(d1, dir === 'h' ? 'right' : 'bottom');
+            const nf2 = getRemaining(d2, dir === 'h' ? 'left' : 'top');
+            const ns = STATE_ORDER[Math.min(Math.max(STATE_ORDER.indexOf(d1.state), STATE_ORDER.indexOf(d2.state)) + 1, 5)];
+
+            el1.classList.add('fusing'); el2.classList.add('fusing');
+            const r1 = d1.rotation, r2 = d2.rotation;
+            el1.style.transform = `rotate(${r1}deg) translate${dir === 'h' ? 'X' : 'Y'}(25px) scale${dir === 'h' ? 'X' : 'Y'}(0.7)`;
+            el2.style.transform = `rotate(${r2}deg) translate${dir === 'h' ? 'X' : 'Y'}(-25px) scale${dir === 'h' ? 'X' : 'Y'}(0.7)`;
+
+            setTimeout(() => {
+                el1.style.opacity = el2.style.opacity = '0';
+                setTimeout(() => {
+                    dominos[i1] = { face1: nf1 || ICON_KEYS[0], face2: nf2 || ICON_KEYS[0], rotation: dir === 'h' ? 90 : 0, state: ns };
+                    dominos[i2] = null;
+                    render();
+                    setTimeout(() => { isAnimating = false; checkFusions(); }, 500);
+                }, 200);
+            }, 400);
+        }
+
+        function updateStats() {
+            const counts = { total: 0, silver: 0, gold: 0, diamond: 0, emerald: 0, cosmic: 0 };
+            dominos.forEach(d => { if (d) { counts.total++; if (d.state !== 'white') counts[d.state]++; } });
+            let s = `${counts.total} domino${counts.total > 1 ? 's' : ''}`;
+            if (counts.silver) s += ` | ${counts.silver} argent`;
+            if (counts.gold) s += ` | ${counts.gold} or`;
+            if (counts.diamond) s += ` | ${counts.diamond} 💎`;
+            if (counts.emerald) s += ` | ${counts.emerald} 💚`;
+            if (counts.cosmic) s += ` | ${counts.cosmic} ✨`;
+            document.getElementById('stats').textContent = s;
+        }
+
+        function shuffle() {
+            if (isAnimating || isLocalRotating) return;
+            dominos.forEach(d => { if (d) d.rotation = [0, 90, 180, 270][Math.floor(Math.random() * 4)]; });
+            render();
+            setTimeout(checkFusions, 300);
+        }
+
+        function resetGame() {
+            if (isAnimating || isLocalRotating) return;
+            stopContinuous();
+            dominos = Array.from({ length: TOTAL }, () => ({
+                face1: ICON_KEYS[Math.floor(Math.random() * ICON_KEYS.length)],
+                face2: ICON_KEYS[Math.floor(Math.random() * ICON_KEYS.length)],
+                rotation: 0,
+                state: 'white'
+            }));
+            render();
+        }
+
+        grid.addEventListener('mousedown', handleStart);
+        grid.addEventListener('touchstart', handleStart, { passive: false });
+        document.addEventListener('mousemove', handleMove);
+        document.addEventListener('touchmove', handleMove, { passive: false });
+        document.addEventListener('mouseup', handleEnd);
+        document.addEventListener('touchend', handleEnd);
+
+        resetGame();
+    </script>
+</body>
+</html>
