@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fusion Square - 5×5</title>
+    <title>Fusion Square - 5×8</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { height: 100%; overflow: hidden; touch-action: none; }
@@ -17,39 +17,11 @@
             gap: 20px;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
-        h1 {
-            color: rgba(180, 180, 190, 0.6);
-            font-weight: 300;
-            font-size: 1.2rem;
-            letter-spacing: 0.3em;
-            text-transform: uppercase;
-        }
-        .info {
-            color: rgba(180, 180, 190, 0.5);
-            font-size: 0.75rem;
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        .info span { display: flex; align-items: center; gap: 5px; }
-        .info .dot {
-            width: 10px; height: 10px;
-            border-radius: 50%;
-            border: 1px solid rgba(100,100,110,0.5);
-        }
-        .dot.white { background: rgba(180, 180, 190, 0.4); }
-        .dot.silver { background: linear-gradient(135deg, #7ec8e3, #b8d4e8, #7ec8e3); box-shadow: 0 0 4px rgba(126, 200, 227, 0.5); }
-        .dot.gold { background: linear-gradient(135deg, #b8860b, #ffd700, #b8860b); box-shadow: 0 0 4px rgba(255, 215, 0, 0.5); }
-        .dot.diamond { background: linear-gradient(135deg, #06b6d4, #fff, #06b6d4); box-shadow: 0 0 6px rgba(6, 182, 212, 0.7); }
-        .dot.emerald { background: linear-gradient(135deg, #059669, #34d399, #059669); box-shadow: 0 0 6px rgba(52, 211, 153, 0.7); }
-        .dot.cosmic { background: conic-gradient(from 0deg, #ff006e, #8338ec, #06b6d4, #34d399, #ffd700, #ff006e); box-shadow: 0 0 8px rgba(131, 56, 236, 0.8); animation: cosmicDotSpin 3s linear infinite; }
-        @keyframes cosmicDotSpin { to { transform: rotate(360deg); } }
 
         .grid {
             display: grid;
             grid-template-columns: repeat(5, var(--cell));
-            grid-template-rows: repeat(5, var(--cell));
+            grid-template-rows: repeat(8, var(--cell));
             gap: var(--gap);
             --cell: min(70px, 16vw);
             --gap: 8px;
@@ -140,17 +112,8 @@
     </style>
 </head>
 <body>
-    <h1>Fusion Square 5×5</h1>
-    <div class="info">
-        <span><div class="dot white"></div>Blanc</span>
-        <span><div class="dot silver"></div>Argent</span>
-        <span><div class="dot gold"></div>Or</span>
-        <span><div class="dot diamond"></div>Diamant</span>
-        <span><div class="dot emerald"></div>Émeraude</span>
-        <span><div class="dot cosmic"></div>Cosmique</span>
-    </div>
     <div class="grid" id="grid"></div>
-    <div class="stats" id="stats">25 dominos</div>
+    <div class="stats" id="stats">40 dominos</div>
     <div class="controls">
         <button onclick="resetGame()">Reset</button>
         <button onclick="shuffle()">Mélanger</button>
@@ -168,7 +131,7 @@
             wave: { f1: 'M10 14Q28 36 45 22Q62 8 80 30', f2: 'M10 30Q28 8 45 22Q62 36 80 14', t: 'path' }
         };
         const ICON_KEYS = Object.keys(ICONS);
-        const COLS = 5, ROWS = 5, TOTAL = 25;
+        const COLS = 5, ROWS = 8, TOTAL = 40;
         const STATE_ORDER = ['white', 'silver', 'gold', 'diamond', 'emerald', 'cosmic'];
 
         let dominos = [], grid = document.getElementById('grid');
