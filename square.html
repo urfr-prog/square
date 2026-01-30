@@ -3,409 +3,1039 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fusion Square - 5×8</title>
+    <title>Matrice Blocs - Rubik's</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { height: 100%; overflow: hidden; touch-action: none; }
-        body {
-            background-color: #12131a;
-            min-height: 100vh; min-height: -webkit-fill-available;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            gap: 20px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        body { background: #12131a; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px; }
+        
+        .container {
+            position: relative;
+            width: 300px;
+            height: 400px;
+            overflow: hidden;
         }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(5, var(--cell));
-            grid-template-rows: repeat(8, var(--cell));
-            gap: var(--gap);
-            --cell: min(70px, 16vw);
-            --gap: 8px;
-        }
-        .cell { width: var(--cell); height: var(--cell); position: relative; }
-        .square {
-            width: 100%; height: 100%;
-            background-color: transparent;
-            border: 1px solid rgba(180, 180, 190, 0.35);
-            border-radius: 12px;
+        
+        .cells-layer {
             position: absolute;
             top: 0; left: 0;
-            overflow: hidden;
-            cursor: pointer;
+            width: 100%; height: 100%;
         }
-        .square:hover { border-color: rgba(180, 180, 190, 0.6); }
-        .square.empty { border-style: dashed; border-color: rgba(180, 180, 190, 0.2); cursor: default; }
-        .square.empty:hover { border-color: rgba(180, 180, 190, 0.3); }
-        .square svg { width: 100%; height: 100%; }
-        svg .separator { stroke-width: 1; }
-        svg line.icon, svg path.icon, svg circle.icon { stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
-
-        /* États */
-        .square.white { border-color: rgba(180, 180, 190, 0.35); }
-        .square.white svg line.icon, .square.white svg path.icon, .square.white svg circle.icon { stroke: rgba(180, 180, 190, 0.5); }
-        .square.white svg circle.point { fill: rgba(180, 180, 190, 0.5); }
-        .square.white svg .separator { stroke: rgba(180, 180, 190, 0.3); }
-
-        .square.silver { border-color: rgba(126, 200, 227, 0.7); box-shadow: 0 0 15px rgba(126, 200, 227, 0.25), inset 0 0 20px rgba(126, 200, 227, 0.05); }
-        .square.silver svg line.icon, .square.silver svg path.icon, .square.silver svg circle.icon { stroke: #7ec8e3; filter: drop-shadow(0 0 3px rgba(126, 200, 227, 0.5)); }
-        .square.silver svg circle.point { fill: #7ec8e3; filter: drop-shadow(0 0 3px rgba(126, 200, 227, 0.5)); }
-        .square.silver svg .separator { stroke: rgba(126, 200, 227, 0.4); }
-
-        .square.gold { border-color: rgba(255, 215, 0, 0.7); box-shadow: 0 0 20px rgba(255, 215, 0, 0.3), inset 0 0 20px rgba(255, 215, 0, 0.05); }
-        .square.gold svg line.icon, .square.gold svg path.icon, .square.gold svg circle.icon { stroke: #ffd700; filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.6)); }
-        .square.gold svg circle.point { fill: #ffd700; filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.6)); }
-        .square.gold svg .separator { stroke: rgba(255, 215, 0, 0.4); }
-
-        .square.diamond { border-color: rgba(6, 182, 212, 0.9); box-shadow: 0 0 30px rgba(6, 182, 212, 0.5), 0 0 50px rgba(255, 255, 255, 0.2), inset 0 0 30px rgba(6, 182, 212, 0.1); animation: diamondPulse 2s ease-in-out infinite; }
-        .square.diamond svg line.icon, .square.diamond svg path.icon, .square.diamond svg circle.icon { stroke: #22d3ee; filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.8)) drop-shadow(0 0 10px rgba(255, 255, 255, 0.4)); }
-        .square.diamond svg circle.point { fill: #22d3ee; filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.8)); }
-        .square.diamond svg .separator { stroke: rgba(34, 211, 238, 0.6); }
-        @keyframes diamondPulse {
-            0%, 100% { box-shadow: 0 0 30px rgba(6, 182, 212, 0.5), 0 0 50px rgba(255, 255, 255, 0.2), inset 0 0 30px rgba(6, 182, 212, 0.1); }
-            50% { box-shadow: 0 0 40px rgba(6, 182, 212, 0.7), 0 0 60px rgba(255, 255, 255, 0.3), inset 0 0 40px rgba(6, 182, 212, 0.15); }
+        
+        .cell {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
-
-        .square.emerald { border-color: rgba(52, 211, 153, 0.9); box-shadow: 0 0 25px rgba(5, 150, 105, 0.5), 0 0 40px rgba(52, 211, 153, 0.3), inset 0 0 25px rgba(52, 211, 153, 0.1); animation: emeraldGlow 2.5s ease-in-out infinite; }
-        .square.emerald svg line.icon, .square.emerald svg path.icon, .square.emerald svg circle.icon { stroke: #34d399; filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.9)) drop-shadow(0 0 12px rgba(5, 150, 105, 0.5)); }
-        .square.emerald svg circle.point { fill: #34d399; filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.9)); }
-        .square.emerald svg .separator { stroke: rgba(52, 211, 153, 0.6); }
-        @keyframes emeraldGlow {
-            0%, 100% { box-shadow: 0 0 25px rgba(5, 150, 105, 0.5), 0 0 40px rgba(52, 211, 153, 0.3), inset 0 0 25px rgba(52, 211, 153, 0.1); }
-            50% { box-shadow: 0 0 35px rgba(5, 150, 105, 0.7), 0 0 55px rgba(52, 211, 153, 0.4), inset 0 0 35px rgba(52, 211, 153, 0.15); }
+        
+        .cell svg {
+            width: 80%;
+            height: 80%;
         }
-
-        .square.cosmic { border: 2px solid transparent; background: linear-gradient(#12131a, #12131a) padding-box, conic-gradient(from var(--cosmic-angle, 0deg), #ff006e, #8338ec, #06b6d4, #34d399, #ffd700, #ff006e) border-box; box-shadow: 0 0 40px rgba(131, 56, 236, 0.6), 0 0 60px rgba(255, 0, 110, 0.3), 0 0 80px rgba(6, 182, 212, 0.3), inset 0 0 40px rgba(131, 56, 236, 0.15); animation: cosmicRotate 4s linear infinite, cosmicPulse 2s ease-in-out infinite; }
-        .square.cosmic svg line.icon, .square.cosmic svg path.icon, .square.cosmic svg circle.icon { stroke: #c4b5fd; filter: drop-shadow(0 0 8px rgba(131, 56, 236, 0.9)) drop-shadow(0 0 12px rgba(255, 0, 110, 0.6)); animation: cosmicIconShift 3s ease-in-out infinite; }
-        .square.cosmic svg circle.point { fill: #c4b5fd; filter: drop-shadow(0 0 8px rgba(131, 56, 236, 0.9)); animation: cosmicPointPulse 1.5s ease-in-out infinite; }
-        .square.cosmic svg .separator { stroke: rgba(196, 181, 253, 0.7); }
-        @property --cosmic-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
-        @keyframes cosmicRotate { to { --cosmic-angle: 360deg; } }
+        
+        svg .icon { 
+            stroke: rgba(180,180,190,0.35); 
+            stroke-width: 1.5; 
+            stroke-linecap: round; 
+            stroke-linejoin: round; 
+            fill: none; 
+        }
+        svg .point { 
+            fill: rgba(180,180,190,0.35); 
+            stroke: none; 
+        }
+        
+        /* === ÉTATS === */
+        /* WHITE (défaut) */
+        svg .icon.white { stroke: rgba(180,180,190,0.35); }
+        svg .point.white { fill: rgba(180,180,190,0.35); }
+        
+        /* SILVER */
+        svg .icon.silver { 
+            stroke: #22d3ee; 
+            filter: drop-shadow(0 0 2px rgba(34, 211, 238, 0.4)); 
+        }
+        svg .point.silver { 
+            fill: #22d3ee; 
+            filter: drop-shadow(0 0 2px rgba(34, 211, 238, 0.4)); 
+        }
+        
+        /* GOLD */
+        svg .icon.gold { 
+            stroke: #ffd700; 
+            filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.6)); 
+        }
+        svg .point.gold { 
+            fill: #ffd700; 
+            filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.6)); 
+        }
+        
+        /* EMERALD */
+        svg .icon.emerald { 
+            stroke: #34d399; 
+            filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.9)) drop-shadow(0 0 12px rgba(5, 150, 105, 0.5)); 
+        }
+        svg .point.emerald { 
+            fill: #34d399; 
+            filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.9)); 
+        }
+        
+        /* COSMIC */
+        svg .icon.cosmic { 
+            stroke: #c4b5fd; 
+            filter: drop-shadow(0 0 6px rgba(131, 56, 236, 0.7)) drop-shadow(0 0 10px rgba(255, 0, 110, 0.4)); 
+            animation: cosmicShift 3s ease-in-out infinite;
+        }
+        svg .point.cosmic { 
+            fill: #c4b5fd; 
+            filter: drop-shadow(0 0 6px rgba(131, 56, 236, 0.7)); 
+            animation: cosmicPulse 1.5s ease-in-out infinite;
+        }
+        
+        /* SUPERNOVAE */
+        svg .icon.supernovae { 
+            stroke: #fff; 
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9)) 
+                    drop-shadow(0 0 16px rgba(255, 200, 100, 0.7)) 
+                    drop-shadow(0 0 24px rgba(255, 100, 50, 0.5)); 
+            animation: supernovaeFlare 2s ease-in-out infinite;
+        }
+        svg .point.supernovae { 
+            fill: #fff; 
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9)) 
+                    drop-shadow(0 0 16px rgba(255, 200, 100, 0.7)); 
+            animation: supernovaePulse 1s ease-in-out infinite;
+        }
+        
+        @keyframes cosmicShift {
+            0%, 100% { stroke: #c4b5fd; }
+            50% { stroke: #f0abfc; }
+        }
         @keyframes cosmicPulse {
-            0%, 100% { box-shadow: 0 0 40px rgba(131, 56, 236, 0.6), 0 0 60px rgba(255, 0, 110, 0.3), 0 0 80px rgba(6, 182, 212, 0.3), inset 0 0 40px rgba(131, 56, 236, 0.15); }
-            50% { box-shadow: 0 0 55px rgba(131, 56, 236, 0.8), 0 0 80px rgba(255, 0, 110, 0.5), 0 0 100px rgba(6, 182, 212, 0.4), inset 0 0 50px rgba(131, 56, 236, 0.2); }
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
-        @keyframes cosmicIconShift { 0%, 100% { stroke: #c4b5fd; } 33% { stroke: #22d3ee; } 66% { stroke: #f472b6; } }
-        @keyframes cosmicPointPulse { 0%, 100% { fill: #c4b5fd; } 50% { fill: #f472b6; } }
-
-        .square.fusing { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease; }
-        .square.fused-result { animation: fusionAppear 0.5s cubic-bezier(0.2, 0, 0.2, 1); }
-        @keyframes fusionAppear { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
-
-        .controls { display: flex; gap: 12px; }
-        button {
-            background: transparent;
-            border: 1px solid rgba(180, 180, 190, 0.35);
-            color: rgba(180, 180, 190, 0.7);
-            padding: 8px 20px;
-            border-radius: 8px;
+        @keyframes supernovaeFlare {
+            0%, 100% { filter: drop-shadow(0 0 8px rgba(255,255,255,0.9)) drop-shadow(0 0 16px rgba(255,200,100,0.7)) drop-shadow(0 0 24px rgba(255,100,50,0.5)); }
+            50% { filter: drop-shadow(0 0 12px rgba(255,255,255,1)) drop-shadow(0 0 24px rgba(255,200,100,0.9)) drop-shadow(0 0 36px rgba(255,100,50,0.7)); }
+        }
+        @keyframes supernovaePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .lines-layer {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+        }
+        
+        .line-h, .line-v {
+            position: absolute;
+            background: rgba(180,180,190,0.35);
+        }
+        
+        .line-h {
+            height: 1px;
+            width: 50px;
+        }
+        
+        .line-v {
+            width: 1px;
+            height: 50px;
+        }
+        
+        .border-layer {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            border: 1px solid rgba(180,180,190,0.35);
+            pointer-events: none;
+        }
+        
+        .touch-layer {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .touch-zone {
+            position: absolute;
+            width: 50px;
+            height: 50px;
             cursor: pointer;
-            font-size: 0.8rem;
-            letter-spacing: 0.1em;
-            transition: all 0.2s;
+            pointer-events: auto;
         }
-        button:hover { border-color: rgba(180, 180, 190, 0.6); color: rgba(220, 220, 230, 0.9); }
-        .stats { color: rgba(180, 180, 190, 0.5); font-size: 0.75rem; }
+        
+        .rotation-group {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            pointer-events: none;
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .rotation-group .cell,
+        .rotation-group .line-h,
+        .rotation-group .line-v {
+            position: absolute;
+        }
+        
+        /* Ghosts pour le drag */
+        .cell.ghost, .line-h.ghost, .line-v.ghost {
+            opacity: 0.7;
+        }
+        
+        /* Slider */
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: rgba(180,180,190,0.5);
+            font-family: system-ui, sans-serif;
+            font-size: 12px;
+        }
+        
+        .slider {
+            -webkit-appearance: none;
+            width: 200px;
+            height: 4px;
+            background: rgba(180,180,190,0.2);
+            border-radius: 2px;
+            outline: none;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: rgba(180,180,190,0.6);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: rgba(180,180,190,0.6);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .slider-value {
+            width: 36px;
+            text-align: right;
+        }
     </style>
 </head>
 <body>
-    <div class="grid" id="grid"></div>
-    <div class="stats" id="stats">40 dominos</div>
-    <div class="controls">
-        <button onclick="resetGame()">Reset</button>
-        <button onclick="shuffle()">Mélanger</button>
+    <div class="container" id="container">
+        <div class="cells-layer" id="cellsLayer"></div>
+        <div class="lines-layer" id="linesLayer"></div>
+        <div class="border-layer" id="borderLayer"></div>
+        <div class="touch-layer" id="touchLayer"></div>
     </div>
-
+    
+    <div class="slider-container">
+        <span>Grille</span>
+        <input type="range" class="slider" id="gridOpacity" min="0" max="100" value="20">
+        <span class="slider-value" id="opacityValue">20%</span>
+    </div>
+    
     <script>
+        const COLS = 6, ROWS = 8;
+        const CELL = 50;
+        
+        // Nouveaux sigles à symétrie rotationnelle d'ordre 4
         const ICONS = {
-            chevron: { f1: 'M20 12L45 32L70 12', f2: 'M20 32L45 12L70 32', t: 'path' },
-            circle: { f1: '45,22,12', f2: '45,22,12', t: 'circle' },
-            twoCircles: { f1: '30,22,8|60,22,8', f2: '30,22,8|60,22,8', t: 'circles' },
-            line: { f1: '15,22,75,22', f2: '15,22,75,22', t: 'line' },
-            threeLines: { f1: '25,10,25,34|45,10,45,34|65,10,65,34', f2: '25,10,25,34|45,10,45,34|65,10,65,34', t: 'lines' },
-            twoPoints: { f1: '30,22,4|60,22,4', f2: '30,22,4|60,22,4', t: 'points' },
-            threePoints: { f1: '45,10,4|30,32,4|60,32,4', f2: '45,34,4|30,12,4|60,12,4', t: 'points' },
-            wave: { f1: 'M10 14Q28 36 45 22Q62 8 80 30', f2: 'M10 30Q28 8 45 22Q62 36 80 14', t: 'path' }
-        };
-        const ICON_KEYS = Object.keys(ICONS);
-        const COLS = 5, ROWS = 8, TOTAL = 40;
-        const STATE_ORDER = ['white', 'silver', 'gold', 'diamond', 'emerald', 'cosmic'];
-
-        let dominos = [], grid = document.getElementById('grid');
-        let isAnimating = false, isLocalRotating = false, isRotatingDomino = false;
-        let continuousState = null, continuousTimer = null, dragState = null;
-        const ROTATION_SPEED = 800;
-
-        function renderIcon(icon, isFace2) {
-            const d = ICONS[icon], data = isFace2 ? d.f2 : d.f1;
-            if (d.t === 'path') return `<path class="icon" d="${data}"/>`;
-            if (d.t === 'circle') { const [cx,cy,r] = data.split(','); return `<circle class="icon" cx="${cx}" cy="${cy}" r="${r}"/>`; }
-            if (d.t === 'line') { const [x1,y1,x2,y2] = data.split(','); return `<line class="icon" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`; }
-            return data.split('|').map(p => {
-                const v = p.split(',');
-                return d.t === 'circles' || d.t === 'points' 
-                    ? `<circle class="${d.t === 'points' ? 'point' : 'icon'}" cx="${v[0]}" cy="${v[1]}" r="${v[2]}"/>` 
-                    : `<line class="icon" x1="${v[0]}" y1="${v[1]}" x2="${v[2]}" y2="${v[3]}"/>`;
-            }).join('');
-        }
-
-        function renderDomino(d) {
-            return `<svg viewBox="0 0 90 90"><line class="separator" x1="0" y1="45" x2="90" y2="45"/><g>${renderIcon(d.face1, false)}</g><g transform="translate(0,45)">${renderIcon(d.face2, true)}</g></svg>`;
-        }
-
-        function render() {
-            grid.innerHTML = '';
-            for (let i = 0; i < TOTAL; i++) {
-                const cell = document.createElement('div');
-                cell.className = 'cell';
-                const div = document.createElement('div');
-                div.dataset.index = i;
-                if (dominos[i]) {
-                    div.className = `square ${dominos[i].state}`;
-                    div.innerHTML = renderDomino(dominos[i]);
-                    div.style.transform = `rotate(${dominos[i].rotation}deg)`;
-                } else {
-                    div.className = 'square empty';
-                }
-                cell.appendChild(div);
-                grid.appendChild(cell);
+            spiral: {
+                paths: [
+                    'M50 50 L50 15 Q50 5 40 10 L20 20',
+                    'M50 50 L85 50 Q95 50 90 40 L80 20',
+                    'M50 50 L50 85 Q50 95 60 90 L80 80',
+                    'M50 50 L15 50 Q5 50 10 60 L20 80'
+                ]
+            },
+            star4: {
+                paths: ['M50 10 Q35 35 10 50 Q35 65 50 90 Q65 65 90 50 Q65 35 50 10 Z']
+            },
+            waves: {
+                paths: [
+                    'M15 50 Q30 35 50 35 Q70 35 85 50',
+                    'M15 50 Q30 65 50 65 Q70 65 85 50',
+                    'M50 15 Q35 30 35 50 Q35 70 50 85',
+                    'M50 15 Q65 30 65 50 Q65 70 50 85'
+                ]
+            },
+            arrows: {
+                paths: [
+                    'M20 20 L50 40 L40 50 L20 20',
+                    'M80 20 L60 50 L50 40 L80 20',
+                    'M80 80 L50 60 L60 50 L80 80',
+                    'M20 80 L40 50 L50 60 L20 80'
+                ]
+            },
+            flower: {
+                paths: [
+                    'M50 50 Q30 30 50 15 Q70 30 50 50',
+                    'M50 50 Q70 30 85 50 Q70 70 50 50',
+                    'M50 50 Q70 70 50 85 Q30 70 50 50',
+                    'M50 50 Q30 70 15 50 Q30 30 50 50'
+                ]
+            },
+            box: {
+                paths: [
+                    'M35 35 L65 35 L65 65 L35 65 Z',
+                    'M35 35 L20 20',
+                    'M65 35 L80 20',
+                    'M65 65 L80 80',
+                    'M35 65 L20 80'
+                ]
+            },
+            corners: {
+                circles: [[25,25,10], [75,25,10], [75,75,10], [25,75,10]],
+                fills: [[50,50,5]]
+            },
+            helix: {
+                paths: [
+                    'M50 50 C50 35 35 20 20 25',
+                    'M50 50 C65 50 80 35 75 20',
+                    'M50 50 C50 65 65 80 80 75',
+                    'M50 50 C35 50 20 65 25 80'
+                ]
+            },
+            diamond: {
+                paths: [
+                    'M50 30 L70 50 L50 70 L30 50 Z',
+                    'M50 30 L50 12',
+                    'M70 50 L88 50',
+                    'M50 70 L50 88',
+                    'M30 50 L12 50'
+                ]
+            },
+            dots: {
+                fills: [[50,20,4], [35,28,3], [80,50,4], [72,35,3], [50,80,4], [65,72,3], [20,50,4], [28,65,3]]
+            },
+            cross: {
+                paths: ['M40 15 Q40 40 15 40', 'M60 15 Q60 40 85 40', 'M85 60 Q60 60 60 85', 'M15 60 Q40 60 40 85']
+            },
+            vortex: {
+                paths: [
+                    'M50 50 Q45 40 50 25 Q60 30 55 45',
+                    'M50 50 Q60 45 75 50 Q70 60 55 55',
+                    'M50 50 Q55 60 50 75 Q40 70 45 55',
+                    'M50 50 Q40 55 25 50 Q30 40 45 45'
+                ]
             }
-            updateStats();
+        };
+        const keys = ['spiral', 'star4', 'waves', 'arrows', 'flower', 'box', 'corners', 'helix', 'diamond', 'dots', 'cross', 'vortex'];
+        
+        function renderIcon(key, state) {
+            const icon = ICONS[key];
+            if (!icon) return '';
+            const stateClass = state || 'white';
+            
+            let svg = '';
+            
+            // Paths (strokes)
+            if (icon.paths) {
+                icon.paths.forEach(d => {
+                    svg += `<path class="icon ${stateClass}" d="${d}"/>`;
+                });
+            }
+            
+            // Circles (strokes)
+            if (icon.circles) {
+                icon.circles.forEach(([cx, cy, r]) => {
+                    svg += `<circle class="icon ${stateClass}" cx="${cx}" cy="${cy}" r="${r}"/>`;
+                });
+            }
+            
+            // Fills (points pleins)
+            if (icon.fills) {
+                icon.fills.forEach(([cx, cy, r]) => {
+                    svg += `<circle class="point ${stateClass}" cx="${cx}" cy="${cy}" r="${r}"/>`;
+                });
+            }
+            
+            return svg;
         }
-
-        function getPos(i) { return { x: i % COLS, y: Math.floor(i / COLS) }; }
-        function getIndex(x, y) { return (x < 0 || x >= COLS || y < 0 || y >= ROWS) ? -1 : y * COLS + x; }
-
-        function detectDiag(dx, dy) {
-            const ax = Math.abs(dx), ay = Math.abs(dy);
-            if (ax < 15 || ay < 15 || ax/ay < 0.5 || ax/ay > 2) return null;
-            return dy < 0 ? (dx > 0 ? 'ur' : 'ul') : (dx > 0 ? 'dr' : 'dl');
+        
+        const STATES = ['white', 'silver', 'gold', 'emerald', 'cosmic', 'supernovae'];
+        
+        let cells = [];
+        let cellStates = [];  // État de chaque cellule
+        let hLines = [];
+        let vLines = [];
+        let isAnimating = false;
+        
+        // Drag state
+        let dragging = false;
+        let dragAxis = null;
+        let dragRow = -1, dragCol = -1;
+        let startX = 0, startY = 0;
+        let offset = 0;
+        let dragElements = [];
+        let ghostElements = [];
+        
+        const container = document.getElementById('container');
+        const cellsLayer = document.getElementById('cellsLayer');
+        const linesLayer = document.getElementById('linesLayer');
+        const touchLayer = document.getElementById('touchLayer');
+        
+        function rng(seed) {
+            let s = seed;
+            return () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
         }
-
-        function getGroup(x, y, dir) {
-            const offsets = { ur: [0, -1], ul: [-1, -1], dr: [0, 0], dl: [-1, 0] };
-            const [ox, oy] = offsets[dir];
-            const tx = x + ox, ty = y + oy;
-            if (tx < 0 || tx > COLS - 2 || ty < 0 || ty > ROWS - 2) return null;
-            return [getIndex(tx, ty), getIndex(tx + 1, ty), getIndex(tx, ty + 1), getIndex(tx + 1, ty + 1)];
+        
+        function init() {
+            const r = rng(42424);
+            
+            cells = [];
+            cellStates = [];
+            for (let i = 0; i < COLS * ROWS; i++) {
+                cells.push(keys[~~(r() * 12)]);
+                // État aléatoire pondéré (plus de white/silver, moins de supernovae)
+                const stateRoll = r();
+                if (stateRoll < 0.30) cellStates.push('white');
+                else if (stateRoll < 0.55) cellStates.push('silver');
+                else if (stateRoll < 0.75) cellStates.push('gold');
+                else if (stateRoll < 0.88) cellStates.push('emerald');
+                else if (stateRoll < 0.96) cellStates.push('cosmic');
+                else cellStates.push('supernovae');
+            }
+            
+            hLines = [];
+            for (let row = 0; row < ROWS - 1; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    hLines.push(true);
+                }
+            }
+            
+            vLines = [];
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS - 1; col++) {
+                    vLines.push(true);
+                }
+            }
+            
+            render();
+            createTouchZones();
+            setupDragListeners();
         }
-
-        function isClockwise(dir) { return dir === 'ur' || dir === 'dr'; }
-
-        function stopContinuous() {
-            if (continuousTimer) { clearTimeout(continuousTimer); continuousTimer = null; }
-            continuousState = null;
+        
+        function render() {
+            cellsLayer.innerHTML = '';
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    const idx = row * COLS + col;
+                    const div = document.createElement('div');
+                    div.className = 'cell';
+                    div.id = `cell-${col}-${row}`;
+                    div.dataset.col = col;
+                    div.dataset.row = row;
+                    div.style.left = col * CELL + 'px';
+                    div.style.top = row * CELL + 'px';
+                    div.innerHTML = `<svg viewBox="0 0 100 100">${renderIcon(cells[idx], cellStates[idx])}</svg>`;
+                    cellsLayer.appendChild(div);
+                }
+            }
+            
+            linesLayer.innerHTML = '';
+            
+            for (let row = 0; row < ROWS - 1; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    const idx = row * COLS + col;
+                    if (hLines[idx]) {
+                        const line = document.createElement('div');
+                        line.className = 'line-h';
+                        line.id = `hline-${col}-${row}`;
+                        line.dataset.col = col;
+                        line.dataset.row = row;
+                        line.style.left = col * CELL + 'px';
+                        line.style.top = (row + 1) * CELL + 'px';
+                        linesLayer.appendChild(line);
+                    }
+                }
+            }
+            
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS - 1; col++) {
+                    const idx = row * (COLS - 1) + col;
+                    if (vLines[idx]) {
+                        const line = document.createElement('div');
+                        line.className = 'line-v';
+                        line.id = `vline-${col}-${row}`;
+                        line.dataset.col = col;
+                        line.dataset.row = row;
+                        line.style.left = (col + 1) * CELL + 'px';
+                        line.style.top = row * CELL + 'px';
+                        linesLayer.appendChild(line);
+                    }
+                }
+            }
         }
-
-        function executeRotation(indices, clockwise, callback) {
-            if (isLocalRotating || isRotatingDomino) return;
-            isLocalRotating = true;
-
-            const cells = indices.map((idx, i) => ({
-                el: grid.children[idx].querySelector('.square'),
-                domino: dominos[idx],
-                sx: (idx % COLS), sy: Math.floor(idx / COLS)
-            }));
-
-            const map = clockwise ? [2, 0, 3, 1] : [1, 3, 0, 2];
-            cells.forEach((c, i) => {
-                const ti = map[i];
-                c.tx = indices[ti] % COLS;
-                c.ty = Math.floor(indices[ti] / COLS);
+        
+        function createTouchZones() {
+            touchLayer.innerHTML = '';
+            
+            for (let br = 0; br < 4; br++) {
+                for (let bc = 0; bc < 3; bc++) {
+                    const zone = document.createElement('div');
+                    zone.className = 'touch-zone block';
+                    zone.style.left = (bc * 2 * CELL + CELL / 2) + 'px';
+                    zone.style.top = (br * 2 * CELL + CELL / 2) + 'px';
+                    zone.dataset.type = 'block';
+                    zone.dataset.bc = bc;
+                    zone.dataset.br = br;
+                    zone.addEventListener('click', handleRotation);
+                    touchLayer.appendChild(zone);
+                }
+            }
+            
+            for (let ir = 0; ir < 3; ir++) {
+                for (let ic = 0; ic < 2; ic++) {
+                    const zone = document.createElement('div');
+                    zone.className = 'touch-zone mid';
+                    zone.style.left = ((ic + 1) * 2 * CELL - CELL / 2) + 'px';
+                    zone.style.top = ((ir + 1) * 2 * CELL - CELL / 2) + 'px';
+                    zone.dataset.type = 'mid';
+                    zone.dataset.ic = ic;
+                    zone.dataset.ir = ir;
+                    zone.addEventListener('click', handleRotation);
+                    touchLayer.appendChild(zone);
+                }
+            }
+        }
+        
+        function handleRotation(e) {
+            if (isAnimating || dragging) return;
+            
+            const type = e.target.dataset.type;
+            
+            if (type === 'block') {
+                const bc = +e.target.dataset.bc;
+                const br = +e.target.dataset.br;
+                animateRotation(bc * 2, br * 2, 'block', bc, br);
+            } else {
+                const ic = +e.target.dataset.ic;
+                const ir = +e.target.dataset.ir;
+                const c = (ic + 1) * 2 - 1;
+                const r = (ir + 1) * 2 - 1;
+                animateRotation(c, r, 'mid', ic, ir);
+            }
+        }
+        
+        function animateRotation(startCol, startRow, type, param1, param2) {
+            isAnimating = true;
+            
+            const group = document.createElement('div');
+            group.className = 'rotation-group';
+            group.style.left = startCol * CELL + 'px';
+            group.style.top = startRow * CELL + 'px';
+            
+            const cellCoords = [
+                [startCol, startRow],
+                [startCol + 1, startRow],
+                [startCol, startRow + 1],
+                [startCol + 1, startRow + 1]
+            ];
+            
+            cellCoords.forEach(([col, row]) => {
+                const original = document.getElementById(`cell-${col}-${row}`);
+                if (original) {
+                    original.style.visibility = 'hidden';
+                    const clone = original.cloneNode(true);
+                    clone.style.left = (col - startCol) * CELL + 'px';
+                    clone.style.top = (row - startRow) * CELL + 'px';
+                    clone.style.visibility = 'visible';
+                    group.appendChild(clone);
+                }
             });
-
-            const duration = continuousState ? ROTATION_SPEED * 0.7 : ROTATION_SPEED * 0.5;
-            const start = performance.now();
-            const cellSize = grid.children[0].offsetWidth;
-            const gap = parseFloat(getComputedStyle(grid).gap) || 8;
-
-            function animate(t) {
-                const p = Math.min((t - start) / duration, 1);
-                const e = 1 - Math.pow(1 - p, 3);
-                cells.forEach(c => {
-                    if (c.el) {
-                        const dx = (c.tx - c.sx) * (cellSize + gap) * e;
-                        const dy = (c.ty - c.sy) * (cellSize + gap) * e;
-                        c.el.style.transform = `translate(${dx}px, ${dy}px) rotate(${c.domino?.rotation || 0}deg)`;
+            
+            const hLineCoords = [
+                [startCol, startRow],
+                [startCol + 1, startRow]
+            ];
+            
+            hLineCoords.forEach(([col, row]) => {
+                const original = document.getElementById(`hline-${col}-${row}`);
+                if (original) {
+                    original.style.visibility = 'hidden';
+                    const clone = original.cloneNode(true);
+                    clone.style.left = (col - startCol) * CELL + 'px';
+                    clone.style.top = (row - startRow + 1) * CELL + 'px';
+                    clone.style.visibility = 'visible';
+                    group.appendChild(clone);
+                }
+            });
+            
+            const vLineCoords = [
+                [startCol, startRow],
+                [startCol, startRow + 1]
+            ];
+            
+            vLineCoords.forEach(([col, row]) => {
+                const original = document.getElementById(`vline-${col}-${row}`);
+                if (original) {
+                    original.style.visibility = 'hidden';
+                    const clone = original.cloneNode(true);
+                    clone.style.left = (col - startCol + 1) * CELL + 'px';
+                    clone.style.top = (row - startRow) * CELL + 'px';
+                    clone.style.visibility = 'visible';
+                    group.appendChild(clone);
+                }
+            });
+            
+            container.appendChild(group);
+            group.offsetHeight;
+            group.style.transformOrigin = '50px 50px';
+            group.style.transform = 'rotate(90deg)';
+            
+            setTimeout(() => {
+                group.remove();
+                
+                if (type === 'block') {
+                    rotateBlockData(param1, param2);
+                } else {
+                    rotateMidData(param1, param2);
+                }
+                
+                render();
+                isAnimating = false;
+            }, 260);
+        }
+        
+        function rotateBlockData(bc, br) {
+            const c = bc * 2;
+            const r = br * 2;
+            
+            const tl = r * COLS + c;
+            const tr = r * COLS + c + 1;
+            const bl = (r + 1) * COLS + c;
+            const br_idx = (r + 1) * COLS + c + 1;
+            
+            // Rotation des icônes
+            const temp = cells[tl];
+            cells[tl] = cells[bl];
+            cells[bl] = cells[br_idx];
+            cells[br_idx] = cells[tr];
+            cells[tr] = temp;
+            
+            // Rotation des états
+            const tempState = cellStates[tl];
+            cellStates[tl] = cellStates[bl];
+            cellStates[bl] = cellStates[br_idx];
+            cellStates[br_idx] = cellStates[tr];
+            cellStates[tr] = tempState;
+            
+            const hLeft = r * COLS + c;
+            const hRight = r * COLS + c + 1;
+            const vTop = r * (COLS - 1) + c;
+            const vBottom = (r + 1) * (COLS - 1) + c;
+            
+            const tempLine = hLines[hLeft];
+            hLines[hLeft] = vLines[vBottom];
+            vLines[vBottom] = hLines[hRight];
+            hLines[hRight] = vLines[vTop];
+            vLines[vTop] = tempLine;
+        }
+        
+        function rotateMidData(ic, ir) {
+            const c = (ic + 1) * 2;
+            const r = (ir + 1) * 2;
+            
+            const tl = (r - 1) * COLS + (c - 1);
+            const tr = (r - 1) * COLS + c;
+            const bl = r * COLS + (c - 1);
+            const br_idx = r * COLS + c;
+            
+            // Rotation des icônes
+            const temp = cells[tl];
+            cells[tl] = cells[bl];
+            cells[bl] = cells[br_idx];
+            cells[br_idx] = cells[tr];
+            cells[tr] = temp;
+            
+            // Rotation des états
+            const tempState = cellStates[tl];
+            cellStates[tl] = cellStates[bl];
+            cellStates[bl] = cellStates[br_idx];
+            cellStates[br_idx] = cellStates[tr];
+            cellStates[tr] = tempState;
+            
+            const hLeft = (r - 1) * COLS + (c - 1);
+            const hRight = (r - 1) * COLS + c;
+            const vTop = (r - 1) * (COLS - 1) + (c - 1);
+            const vBottom = r * (COLS - 1) + (c - 1);
+            
+            const tempLine = hLines[hLeft];
+            hLines[hLeft] = vLines[vBottom];
+            vLines[vBottom] = hLines[hRight];
+            hLines[hRight] = vLines[vTop];
+            vLines[vTop] = tempLine;
+        }
+        
+        // === DRAG SYSTEM ===
+        
+        function setupDragListeners() {
+            container.addEventListener('mousedown', dragStart);
+            container.addEventListener('touchstart', dragStart, { passive: false });
+            document.addEventListener('mousemove', dragMove);
+            document.addEventListener('touchmove', dragMove, { passive: false });
+            document.addEventListener('mouseup', dragEnd);
+            document.addEventListener('touchend', dragEnd);
+        }
+        
+        function dragStart(e) {
+            if (isAnimating) return;
+            if (e.target.classList.contains('touch-zone')) return;
+            
+            const cell = e.target.closest('.cell');
+            if (!cell) return;
+            
+            e.preventDefault();
+            
+            dragCol = +cell.dataset.col;
+            dragRow = +cell.dataset.row;
+            dragging = true;
+            dragAxis = null;
+            offset = 0;
+            dragElements = [];
+            ghostElements = [];
+            
+            const pt = e.touches ? e.touches[0] : e;
+            startX = pt.clientX;
+            startY = pt.clientY;
+        }
+        
+        function dragMove(e) {
+            if (!dragging) return;
+            e.preventDefault();
+            
+            const pt = e.touches ? e.touches[0] : e;
+            const dx = pt.clientX - startX;
+            const dy = pt.clientY - startY;
+            
+            // Déterminer l'axe
+            if (!dragAxis && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+                dragAxis = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
+                collectDragElements();
+                createGhosts();
+            }
+            
+            if (!dragAxis) return;
+            
+            offset = dragAxis === 'h' ? dx : dy;
+            updateDragPositions();
+        }
+        
+        function dragEnd(e) {
+            if (!dragging) return;
+            dragging = false;
+            
+            if (!dragAxis) return;
+            
+            const size = CELL;
+            const steps = Math.round(offset / size);
+            
+            if (steps === 0) {
+                // Retour à la position initiale
+                animateSnapBack();
+            } else {
+                // Appliquer le décalage
+                animateSnapToStep(steps);
+            }
+        }
+        
+        function collectDragElements() {
+            dragElements = [];
+            
+            if (dragAxis === 'h') {
+                // Collecter toute la rangée
+                for (let col = 0; col < COLS; col++) {
+                    const cell = document.getElementById(`cell-${col}-${dragRow}`);
+                    if (cell) dragElements.push({ el: cell, baseX: col * CELL, baseY: dragRow * CELL, type: 'cell', col, row: dragRow });
+                }
+                // Lignes H au-dessus et en-dessous de cette rangée
+                if (dragRow > 0) {
+                    for (let col = 0; col < COLS; col++) {
+                        const line = document.getElementById(`hline-${col}-${dragRow - 1}`);
+                        if (line) dragElements.push({ el: line, baseX: col * CELL, baseY: dragRow * CELL, type: 'hline', col, row: dragRow - 1 });
+                    }
+                }
+                if (dragRow < ROWS - 1) {
+                    for (let col = 0; col < COLS; col++) {
+                        const line = document.getElementById(`hline-${col}-${dragRow}`);
+                        if (line) dragElements.push({ el: line, baseX: col * CELL, baseY: (dragRow + 1) * CELL, type: 'hline', col, row: dragRow });
+                    }
+                }
+                // Lignes V dans cette rangée
+                for (let col = 0; col < COLS - 1; col++) {
+                    const line = document.getElementById(`vline-${col}-${dragRow}`);
+                    if (line) dragElements.push({ el: line, baseX: (col + 1) * CELL, baseY: dragRow * CELL, type: 'vline', col, row: dragRow });
+                }
+            } else {
+                // Collecter toute la colonne
+                for (let row = 0; row < ROWS; row++) {
+                    const cell = document.getElementById(`cell-${dragCol}-${row}`);
+                    if (cell) dragElements.push({ el: cell, baseX: dragCol * CELL, baseY: row * CELL, type: 'cell', col: dragCol, row });
+                }
+                // Lignes V à gauche et à droite de cette colonne
+                if (dragCol > 0) {
+                    for (let row = 0; row < ROWS; row++) {
+                        const line = document.getElementById(`vline-${dragCol - 1}-${row}`);
+                        if (line) dragElements.push({ el: line, baseX: dragCol * CELL, baseY: row * CELL, type: 'vline', col: dragCol - 1, row });
+                    }
+                }
+                if (dragCol < COLS - 1) {
+                    for (let row = 0; row < ROWS; row++) {
+                        const line = document.getElementById(`vline-${dragCol}-${row}`);
+                        if (line) dragElements.push({ el: line, baseX: (dragCol + 1) * CELL, baseY: row * CELL, type: 'vline', col: dragCol, row });
+                    }
+                }
+                // Lignes H dans cette colonne
+                for (let row = 0; row < ROWS - 1; row++) {
+                    const line = document.getElementById(`hline-${dragCol}-${row}`);
+                    if (line) dragElements.push({ el: line, baseX: dragCol * CELL, baseY: (row + 1) * CELL, type: 'hline', col: dragCol, row });
+                }
+            }
+        }
+        
+        function createGhosts() {
+            ghostElements = [];
+            const totalWidth = COLS * CELL;
+            const totalHeight = ROWS * CELL;
+            
+            dragElements.forEach(item => {
+                // Créer 2 ghosts (avant et après)
+                [-1, 1].forEach(dir => {
+                    const ghost = item.el.cloneNode(true);
+                    ghost.classList.add('ghost');
+                    ghost.id = '';
+                    
+                    if (dragAxis === 'h') {
+                        ghost.style.left = (item.baseX + dir * totalWidth) + 'px';
+                        ghost.style.top = item.baseY + 'px';
+                        ghostElements.push({ el: ghost, baseX: item.baseX + dir * totalWidth, baseY: item.baseY });
+                    } else {
+                        ghost.style.left = item.baseX + 'px';
+                        ghost.style.top = (item.baseY + dir * totalHeight) + 'px';
+                        ghostElements.push({ el: ghost, baseX: item.baseX, baseY: item.baseY + dir * totalHeight });
+                    }
+                    
+                    if (item.type === 'cell') {
+                        cellsLayer.appendChild(ghost);
+                    } else {
+                        linesLayer.appendChild(ghost);
                     }
                 });
-                if (p < 1) requestAnimationFrame(animate);
-                else finishRotation(indices, clockwise, callback);
-            }
-            requestAnimationFrame(animate);
+            });
         }
-
-        function finishRotation(indices, clockwise, callback) {
-            const saved = indices.map(i => dominos[i]);
-            const map = clockwise ? [2, 0, 3, 1] : [1, 3, 0, 2];
-            for (let i = 0; i < 4; i++) dominos[indices[map[i]]] = saved[i];
-            render();
-            isLocalRotating = false;
-            setTimeout(checkFusions, 50);
-            if (callback) callback();
+        
+        function updateDragPositions() {
+            dragElements.forEach(item => {
+                item.el.style.transition = 'none';
+                if (dragAxis === 'h') {
+                    item.el.style.left = (item.baseX + offset) + 'px';
+                } else {
+                    item.el.style.top = (item.baseY + offset) + 'px';
+                }
+            });
+            
+            ghostElements.forEach(item => {
+                item.el.style.transition = 'none';
+                if (dragAxis === 'h') {
+                    item.el.style.left = (item.baseX + offset) + 'px';
+                } else {
+                    item.el.style.top = (item.baseY + offset) + 'px';
+                }
+            });
         }
-
-        function attemptRotation(x, y, dx, dy) {
-            if (isRotatingDomino) return false;
-            const dir = detectDiag(dx, dy);
-            if (!dir) return false;
-            const group = getGroup(x, y, dir);
-            if (!group || !group.some(i => dominos[i])) return false;
-
-            continuousState = { x, y, dir };
-            (function step() {
-                if (!continuousState) return;
-                const g = getGroup(continuousState.x, continuousState.y, continuousState.dir);
-                if (!g || !g.some(i => dominos[i])) { stopContinuous(); return; }
-                executeRotation(g, isClockwise(continuousState.dir), () => {
-                    if (continuousState) continuousTimer = setTimeout(step, ROTATION_SPEED * 0.3);
-                });
-            })();
-            return true;
+        
+        function animateSnapBack() {
+            const prop = dragAxis === 'h' ? 'left' : 'top';
+            const base = dragAxis === 'h' ? 'baseX' : 'baseY';
+            
+            dragElements.forEach(item => {
+                item.el.style.transition = `${prop} 0.15s ease-out`;
+                item.el.style[prop] = item[base] + 'px';
+            });
+            
+            setTimeout(() => {
+                clearGhosts();
+                dragAxis = null;
+            }, 160);
         }
-
-        function handleStart(e) {
-            if (isAnimating) return;
-            if (continuousState) { stopContinuous(); return; }
-            const touch = e.touches?.[0] || e;
-            const target = e.target.closest('.square');
-            if (!target) return;
-            const idx = parseInt(target.dataset.index);
-            const pos = getPos(idx);
-            dragState = { idx, x: pos.x, y: pos.y, sx: touch.clientX, sy: touch.clientY, moved: false, isEmpty: !dominos[idx] };
-            e.preventDefault();
+        
+        function animateSnapToStep(steps) {
+            const totalSize = dragAxis === 'h' ? COLS * CELL : ROWS * CELL;
+            const count = dragAxis === 'h' ? COLS : ROWS;
+            const prop = dragAxis === 'h' ? 'left' : 'top';
+            const base = dragAxis === 'h' ? 'baseX' : 'baseY';
+            
+            // Calculer nouvelles positions avec wrap
+            dragElements.forEach(item => {
+                const origPos = item[base] / CELL;
+                const newPos = ((origPos + steps) % count + count) % count;
+                const target = newPos * CELL;
+                
+                // Trouver le chemin le plus court
+                let current = item[base] + offset;
+                while (current - target > totalSize / 2) current -= totalSize;
+                while (target - current > totalSize / 2) current += totalSize;
+                
+                item.el.style.transition = 'none';
+                item.el.style[prop] = current + 'px';
+            });
+            
+            // Forcer reflow
+            container.offsetHeight;
+            
+            // Animer vers la position finale
+            dragElements.forEach(item => {
+                const origPos = item[base] / CELL;
+                const newPos = ((origPos + steps) % count + count) % count;
+                const target = newPos * CELL;
+                
+                item.el.style.transition = `${prop} 0.15s ease-out`;
+                item.el.style[prop] = target + 'px';
+            });
+            
+            setTimeout(() => {
+                clearGhosts();
+                applyDragShift(steps);
+                render();
+                dragAxis = null;
+            }, 160);
         }
-
-        function handleMove(e) {
-            if (!dragState || dragState.moved) return;
-            const touch = e.touches?.[0] || e;
-            const dx = touch.clientX - dragState.sx, dy = touch.clientY - dragState.sy;
-            if (detectDiag(dx, dy)) {
-                dragState.moved = true;
-                attemptRotation(dragState.x, dragState.y, dx, dy);
-            }
-            e.preventDefault();
+        
+        function clearGhosts() {
+            ghostElements.forEach(item => item.el.remove());
+            ghostElements = [];
         }
-
-        function handleEnd() {
-            if (continuousState) stopContinuous();
-            if (dragState && !dragState.moved && !dragState.isEmpty) rotateDomino(dragState.idx);
-            dragState = null;
-        }
-
-        function rotateDomino(idx) {
-            const d = dominos[idx];
-            if (!d || isAnimating || isLocalRotating || isRotatingDomino) return;
-            isRotatingDomino = true;
-            d.rotation += 90;
-            const el = grid.children[idx].querySelector('.square');
-            if (el) {
-                el.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
-                el.style.transform = `rotate(${d.rotation - 45}deg) scale(0.85)`;
-                setTimeout(() => {
-                    el.style.transform = `rotate(${d.rotation}deg) scale(1)`;
-                    setTimeout(() => { isRotatingDomino = false; checkFusions(); }, 100);
-                }, 200);
-            } else isRotatingDomino = false;
-        }
-
-        function getExposed(d, dir) {
-            const r = ((d.rotation % 360) + 360) % 360;
-            const map = { 0: { top: 'face1', bottom: 'face2' }, 90: { right: 'face1', left: 'face2' }, 180: { top: 'face2', bottom: 'face1' }, 270: { right: 'face2', left: 'face1' } };
-            return map[r]?.[dir] ? d[map[r][dir]] : null;
-        }
-
-        function getRemaining(d, exc) {
-            const r = ((d.rotation % 360) + 360) % 360;
-            const map = { 0: { top: 'face2', bottom: 'face1' }, 90: { right: 'face2', left: 'face1' }, 180: { top: 'face1', bottom: 'face2' }, 270: { right: 'face1', left: 'face2' } };
-            return map[r]?.[exc] ? d[map[r][exc]] : null;
-        }
-
-        function checkFusions() {
-            if (isAnimating || isLocalRotating) return;
-            for (let i = 0; i < TOTAL; i++) {
-                if (!dominos[i]) continue;
-                const { x, y } = getPos(i);
-                const checks = [
-                    { ni: getIndex(x + 1, y), d1: 'right', d2: 'left', dir: 'h' },
-                    { ni: getIndex(x, y + 1), d1: 'bottom', d2: 'top', dir: 'v' }
-                ];
-                for (const { ni, d1, d2, dir } of checks) {
-                    if (ni === -1 || !dominos[ni]) continue;
-                    const f1 = getExposed(dominos[i], d1), f2 = getExposed(dominos[ni], d2);
-                    if (f1 && f2 && f1 === f2) { performFusion(i, ni, dir); return; }
+        
+        function applyDragShift(steps) {
+            if (dragAxis === 'h') {
+                // Décaler la rangée de cellules
+                const row = dragRow;
+                const newRow = [];
+                for (let col = 0; col < COLS; col++) {
+                    const srcCol = ((col - steps) % COLS + COLS) % COLS;
+                    newRow[col] = cells[row * COLS + srcCol];
+                }
+                for (let col = 0; col < COLS; col++) {
+                    cells[row * COLS + col] = newRow[col];
+                }
+                
+                // Décaler les lignes H au-dessus (row - 1) et en-dessous (row)
+                if (row > 0) {
+                    const hRow = row - 1;
+                    const newH = [];
+                    for (let col = 0; col < COLS; col++) {
+                        const srcCol = ((col - steps) % COLS + COLS) % COLS;
+                        newH[col] = hLines[hRow * COLS + srcCol];
+                    }
+                    for (let col = 0; col < COLS; col++) {
+                        hLines[hRow * COLS + col] = newH[col];
+                    }
+                }
+                if (row < ROWS - 1) {
+                    const hRow = row;
+                    const newH = [];
+                    for (let col = 0; col < COLS; col++) {
+                        const srcCol = ((col - steps) % COLS + COLS) % COLS;
+                        newH[col] = hLines[hRow * COLS + srcCol];
+                    }
+                    for (let col = 0; col < COLS; col++) {
+                        hLines[hRow * COLS + col] = newH[col];
+                    }
+                }
+                
+                // Décaler les lignes V dans cette rangée
+                const newV = [];
+                for (let col = 0; col < COLS - 1; col++) {
+                    const srcCol = ((col - steps) % (COLS - 1) + (COLS - 1)) % (COLS - 1);
+                    newV[col] = vLines[row * (COLS - 1) + srcCol];
+                }
+                for (let col = 0; col < COLS - 1; col++) {
+                    vLines[row * (COLS - 1) + col] = newV[col];
+                }
+                
+            } else {
+                // Décaler la colonne de cellules
+                const col = dragCol;
+                const newCol = [];
+                for (let row = 0; row < ROWS; row++) {
+                    const srcRow = ((row - steps) % ROWS + ROWS) % ROWS;
+                    newCol[row] = cells[srcRow * COLS + col];
+                }
+                for (let row = 0; row < ROWS; row++) {
+                    cells[row * COLS + col] = newCol[row];
+                }
+                
+                // Décaler les lignes V à gauche (col - 1) et à droite (col)
+                if (col > 0) {
+                    const vCol = col - 1;
+                    const newV = [];
+                    for (let row = 0; row < ROWS; row++) {
+                        const srcRow = ((row - steps) % ROWS + ROWS) % ROWS;
+                        newV[row] = vLines[srcRow * (COLS - 1) + vCol];
+                    }
+                    for (let row = 0; row < ROWS; row++) {
+                        vLines[row * (COLS - 1) + vCol] = newV[row];
+                    }
+                }
+                if (col < COLS - 1) {
+                    const vCol = col;
+                    const newV = [];
+                    for (let row = 0; row < ROWS; row++) {
+                        const srcRow = ((row - steps) % ROWS + ROWS) % ROWS;
+                        newV[row] = vLines[srcRow * (COLS - 1) + vCol];
+                    }
+                    for (let row = 0; row < ROWS; row++) {
+                        vLines[row * (COLS - 1) + vCol] = newV[row];
+                    }
+                }
+                
+                // Décaler les lignes H dans cette colonne
+                const newH = [];
+                for (let row = 0; row < ROWS - 1; row++) {
+                    const srcRow = ((row - steps) % (ROWS - 1) + (ROWS - 1)) % (ROWS - 1);
+                    newH[row] = hLines[srcRow * COLS + col];
+                }
+                for (let row = 0; row < ROWS - 1; row++) {
+                    hLines[row * COLS + col] = newH[row];
                 }
             }
         }
-
-        function performFusion(i1, i2, dir) {
-            isAnimating = true;
-            const d1 = dominos[i1], d2 = dominos[i2];
-            const el1 = grid.children[i1].querySelector('.square'), el2 = grid.children[i2].querySelector('.square');
-            if (!el1 || !el2) { isAnimating = false; return; }
-
-            const nf1 = getRemaining(d1, dir === 'h' ? 'right' : 'bottom');
-            const nf2 = getRemaining(d2, dir === 'h' ? 'left' : 'top');
-            const ns = STATE_ORDER[Math.min(Math.max(STATE_ORDER.indexOf(d1.state), STATE_ORDER.indexOf(d2.state)) + 1, 5)];
-
-            el1.classList.add('fusing'); el2.classList.add('fusing');
-            const r1 = d1.rotation, r2 = d2.rotation;
-            el1.style.transform = `rotate(${r1}deg) translate${dir === 'h' ? 'X' : 'Y'}(25px) scale${dir === 'h' ? 'X' : 'Y'}(0.7)`;
-            el2.style.transform = `rotate(${r2}deg) translate${dir === 'h' ? 'X' : 'Y'}(-25px) scale${dir === 'h' ? 'X' : 'Y'}(0.7)`;
-
-            setTimeout(() => {
-                el1.style.opacity = el2.style.opacity = '0';
-                setTimeout(() => {
-                    dominos[i1] = { face1: nf1 || ICON_KEYS[0], face2: nf2 || ICON_KEYS[0], rotation: dir === 'h' ? 90 : 0, state: ns };
-                    dominos[i2] = null;
-                    render();
-                    setTimeout(() => { isAnimating = false; checkFusions(); }, 500);
-                }, 200);
-            }, 400);
-        }
-
-        function updateStats() {
-            const counts = { total: 0, silver: 0, gold: 0, diamond: 0, emerald: 0, cosmic: 0 };
-            dominos.forEach(d => { if (d) { counts.total++; if (d.state !== 'white') counts[d.state]++; } });
-            let s = `${counts.total} domino${counts.total > 1 ? 's' : ''}`;
-            if (counts.silver) s += ` | ${counts.silver} argent`;
-            if (counts.gold) s += ` | ${counts.gold} or`;
-            if (counts.diamond) s += ` | ${counts.diamond} 💎`;
-            if (counts.emerald) s += ` | ${counts.emerald} 💚`;
-            if (counts.cosmic) s += ` | ${counts.cosmic} ✨`;
-            document.getElementById('stats').textContent = s;
-        }
-
-        function shuffle() {
-            if (isAnimating || isLocalRotating) return;
-            dominos.forEach(d => { if (d) d.rotation = [0, 90, 180, 270][Math.floor(Math.random() * 4)]; });
-            render();
-            setTimeout(checkFusions, 300);
-        }
-
-        function resetGame() {
-            if (isAnimating || isLocalRotating) return;
-            stopContinuous();
-            dominos = Array.from({ length: TOTAL }, () => ({
-                face1: ICON_KEYS[Math.floor(Math.random() * ICON_KEYS.length)],
-                face2: ICON_KEYS[Math.floor(Math.random() * ICON_KEYS.length)],
-                rotation: 0,
-                state: 'white'
-            }));
-            render();
-        }
-
-        grid.addEventListener('mousedown', handleStart);
-        grid.addEventListener('touchstart', handleStart, { passive: false });
-        document.addEventListener('mousemove', handleMove);
-        document.addEventListener('touchmove', handleMove, { passive: false });
-        document.addEventListener('mouseup', handleEnd);
-        document.addEventListener('touchend', handleEnd);
-
-        resetGame();
+        
+        init();
+        
+        // Slider opacité grille
+        const gridSlider = document.getElementById('gridOpacity');
+        const opacityValue = document.getElementById('opacityValue');
+        const linesLayerEl = document.getElementById('linesLayer');
+        const borderLayerEl = document.getElementById('borderLayer');
+        
+        gridSlider.addEventListener('input', (e) => {
+            const val = e.target.value;
+            opacityValue.textContent = val + '%';
+            const opacity = val / 100;
+            linesLayerEl.style.opacity = opacity;
+            borderLayerEl.style.opacity = opacity;
+        });
+        
+        // Appliquer opacité par défaut
+        linesLayerEl.style.opacity = 0.2;
+        borderLayerEl.style.opacity = 0.2;
     </script>
 </body>
 </html>
