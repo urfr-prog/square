@@ -13,10 +13,10 @@
         html, body { height: 100%; overflow: hidden; touch-action: none; }
         body {
             background-color: #12131a;
-            min-height: 100vh; min-height: -webkit-fill-available;
-            display: flex; flex-direction: column; justify-content: flex-start; align-items: center; gap: 6px;
+            min-height: 100vh; min-height: 100dvh;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            padding-top: env(safe-area-inset-top, 8px);
+            padding: 6px;
         }
         
         /* Barre de score compacte avec inputs */
@@ -386,7 +386,6 @@
         <button class="btn level-btn" onclick="setLevel(2)">2</button>
         <button class="btn level-btn" onclick="setLevel(3)">3</button>
         <button class="btn level-btn" onclick="setLevel(4)">4</button>
-        <button class="btn" onclick="toggleNotes()">?</button>
     </div>
     
     <!-- Stats impacts par état -->
@@ -693,12 +692,18 @@
             const iconA = dominoA[faceNameA + 'Icon'];
             const iconB = dominoB[faceNameB + 'Icon'];
             
-            // Si face A est vide, pas d'échange
-            if (iconA === 'empty') return;
+            // Si les deux faces sont vides, pas d'échange
+            if (iconA === 'empty' && iconB === 'empty') return;
             
-            // Échanger les icônes
+            // Échanger les icônes (y compris avec vide)
             dominoA[faceNameA + 'Icon'] = iconB;
             dominoB[faceNameB + 'Icon'] = iconA;
+            
+            // Échanger aussi les états
+            const stateA = dominoA[faceNameA + 'State'];
+            const stateB = dominoB[faceNameB + 'State'];
+            dominoA[faceNameA + 'State'] = stateB;
+            dominoB[faceNameB + 'State'] = stateA;
             
             // Après échange, vérifier si les faces qui se regardent sont identiques
             const newIconA = dominoA[faceNameA + 'Icon']; // ancienne iconB
