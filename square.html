@@ -3,133 +3,405 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Domino - Flip 3D</title>
+    <title>Domino Cube — 6 Faces</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
-            background-color: #12131a;
+            background-color: #0c0d14;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            gap: 20px;
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
         }
+
         h1 {
-            color: rgba(180,180,190,0.5);
-            font-weight: 300;
-            font-size: 1rem;
-            letter-spacing: 0.3em;
+            color: rgba(126, 200, 227, 0.35);
+            font-weight: 200;
+            font-size: 0.8rem;
+            letter-spacing: 0.5em;
             text-transform: uppercase;
+            margin-bottom: 28px;
         }
-        .hint {
-            color: rgba(180,180,190,0.3);
-            font-size: 0.75rem;
-        }
+
         .scene {
+            width: 300px;
+            height: 300px;
+            perspective: 700px;
+            position: relative;
+            touch-action: none;
+        }
+
+        .cube {
             width: 120px;
             height: 120px;
-            perspective: 600px;
-            cursor: pointer;
-        }
-        .card {
-            width: 100%;
-            height: 100%;
-            position: relative;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            margin-left: -60px;
+            margin-top: -60px;
             transform-style: preserve-3d;
-            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.85s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
-        .card.flipped { transform: rotateY(180deg); }
-        .card.flipped-back { transform: rotateY(360deg); }
+
         .face {
             position: absolute;
-            width: 100%;
-            height: 100%;
-            backface-visibility: hidden;
+            width: 120px;
+            height: 120px;
             border-radius: 16px;
             overflow: hidden;
+            backface-visibility: hidden;
+            background: #0e0f18;
+            border: 1px solid rgba(126, 200, 227, 0.5);
+            box-shadow:
+                0 0 25px rgba(126, 200, 227, 0.08),
+                inset 0 0 30px rgba(126, 200, 227, 0.04);
+            cursor: pointer;
+            transition: border-color 0.3s, box-shadow 0.3s;
         }
+
+        .face:hover {
+            border-color: rgba(126, 200, 227, 0.8);
+            box-shadow:
+                0 0 35px rgba(126, 200, 227, 0.15),
+                inset 0 0 40px rgba(126, 200, 227, 0.06);
+        }
+
         .face svg {
             width: 100%;
             height: 100%;
+            display: block;
         }
-        .front {
-            border: 1px solid rgba(180,180,190,0.35);
+
+        .face-front  { transform: rotateY(0deg)    translateZ(60px); }
+        .face-back   { transform: rotateY(180deg)   translateZ(60px); }
+        .face-right  { transform: rotateY(90deg)    translateZ(60px); }
+        .face-left   { transform: rotateY(-90deg)   translateZ(60px); }
+        .face-top    { transform: rotateX(90deg)    translateZ(60px); }
+        .face-bottom { transform: rotateX(-90deg)   translateZ(60px); }
+
+        .face svg .separator {
+            stroke: rgba(126, 200, 227, 0.3);
+            stroke-width: 0.8;
         }
-        .back {
-            border: 1px solid rgba(126,200,227,0.7);
-            transform: rotateY(180deg);
-            box-shadow: 0 0 30px rgba(126,200,227,0.2), inset 0 0 40px rgba(126,200,227,0.05);
-        }
-        svg .separator { stroke: rgba(180,180,190,0.3); stroke-width: 1; }
-        svg .separator-silver { stroke: rgba(126,200,227,0.4); stroke-width: 1; }
-        svg line.icon, svg path.icon, svg circle.icon {
-            stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none;
-        }
-        svg circle.point { stroke: none; }
-        .front svg line.icon, .front svg path.icon, .front svg circle.icon {
-            stroke: rgba(180,180,190,0.5);
-        }
-        .front svg circle.point { fill: rgba(180,180,190,0.5); }
-        .back svg line.icon, .back svg path.icon, .back svg circle.icon {
+        .face svg line.icon, .face svg path.icon,
+        .face svg circle.icon, .face svg rect.icon {
             stroke: #7ec8e3;
-            filter: drop-shadow(0 0 4px rgba(126,200,227,0.6));
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
+            filter: drop-shadow(0 0 4px rgba(126, 200, 227, 0.5));
         }
-        .back svg circle.point {
+        .face svg circle.point {
             fill: #7ec8e3;
-            filter: drop-shadow(0 0 4px rgba(126,200,227,0.6));
+            stroke: none;
+            filter: drop-shadow(0 0 4px rgba(126, 200, 227, 0.5));
         }
-        /* Glow au sol */
+
+        .domino-inner {
+            width: 100%;
+            height: 100%;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Long press visual feedback — anneau qui se remplit */
+        .face::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 50px;
+            height: 50px;
+            margin: -25px 0 0 -25px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            pointer-events: none;
+            transition: none;
+        }
+
+        .face.pressing::after {
+            border-color: rgba(126, 200, 227, 0.4);
+            animation: pressRing 0.45s linear forwards;
+        }
+
+        @keyframes pressRing {
+            0%   { transform: scale(0.3); opacity: 0.8; border-color: rgba(126,200,227,0.3); }
+            100% { transform: scale(1.2); opacity: 0; border-color: rgba(126,200,227,0.6); }
+        }
+
+        @keyframes clickFlash {
+            0%   { box-shadow: 0 0 25px rgba(126,200,227,0.08), inset 0 0 30px rgba(126,200,227,0.04); }
+            50%  { box-shadow: 0 0 50px rgba(126,200,227,0.4), inset 0 0 50px rgba(126,200,227,0.15); }
+            100% { box-shadow: 0 0 25px rgba(126,200,227,0.08), inset 0 0 30px rgba(126,200,227,0.04); }
+        }
+        .face.clicked { animation: clickFlash 0.45s ease; }
+
         .glow {
-            width: 80px;
+            width: 90px;
             height: 10px;
             border-radius: 50%;
-            background: rgba(126,200,227,0.0);
-            transition: all 0.8s;
-            margin-top: -5px;
+            background: rgba(126, 200, 227, 0.15);
+            box-shadow: 0 0 30px rgba(126, 200, 227, 0.15);
+            margin-top: 24px;
         }
-        .glow.active {
-            background: rgba(126,200,227,0.3);
-            box-shadow: 0 0 20px rgba(126,200,227,0.3);
+
+        .face-label {
+            color: rgba(126, 200, 227, 0.25);
+            font-size: 0.7rem;
+            letter-spacing: 0.2em;
+            margin-top: 16px;
+        }
+
+        .hint {
+            color: rgba(180, 180, 190, 0.2);
+            font-size: 0.6rem;
+            margin-top: 8px;
         }
     </style>
 </head>
 <body>
-    <h1>Flip 3D</h1>
+
+    <h1>Domino Cube</h1>
+
     <div class="scene" id="scene">
-        <div class="card" id="card">
-            <div class="face front">
-                <svg viewBox="0 0 90 90">
-                    <line class="separator" x1="0" y1="45" x2="90" y2="45"/>
-                    <g><path class="icon" d="M 20 32 L 45 12 L 70 32"/></g>
-                    <g transform="translate(0,45)"><circle class="icon" cx="45" cy="22" r="12"/></g>
-                </svg>
-            </div>
-            <div class="face back">
-                <svg viewBox="0 0 90 90">
-                    <line class="separator-silver" x1="0" y1="45" x2="90" y2="45"/>
-                    <g><path class="icon" d="M 10 30 Q 28 8 45 22 Q 62 36 80 14"/></g>
-                    <g transform="translate(0,45)"><circle class="point" cx="45" cy="12" r="4"/><circle class="point" cx="30" cy="32" r="4"/><circle class="point" cx="60" cy="32" r="4"/></g>
-                </svg>
-            </div>
-        </div>
+        <div class="cube" id="cube"></div>
     </div>
-    <div class="glow" id="glow"></div>
-    <div class="hint">cliquer pour retourner</div>
+
+    <div class="glow"></div>
+    <div class="face-label" id="faceLabel">front</div>
+    <div class="hint">swipe = naviguer · long press = rotation domino</div>
+
     <script>
-        let flipped = false;
-        const card = document.getElementById('card');
-        const glow = document.getElementById('glow');
-        document.getElementById('scene').addEventListener('click', () => {
-            flipped = !flipped;
-            if (flipped) {
-                card.style.transform = 'rotateY(180deg)';
-                glow.classList.add('active');
-            } else {
-                card.style.transform = 'rotateY(360deg)';
-                glow.classList.remove('active');
-                setTimeout(() => { card.style.transition = 'none'; card.style.transform = 'rotateY(0deg)'; requestAnimationFrame(() => card.style.transition = 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)'); }, 850);
+        // ─── 6 Dominos ───
+        const DOMINOS = [
+            [`<path class="icon" d="M 20 32 L 45 12 L 70 32"/>`,
+             `<circle class="icon" cx="45" cy="22" r="12"/>`],
+            [`<path class="icon" d="M 10 30 Q 28 8 45 22 Q 62 36 80 14"/>`,
+             `<circle class="point" cx="45" cy="12" r="4"/><circle class="point" cx="30" cy="32" r="4"/><circle class="point" cx="60" cy="32" r="4"/>`],
+            [`<circle class="icon" cx="30" cy="22" r="8"/><circle class="icon" cx="60" cy="22" r="8"/>`,
+             `<line class="icon" x1="25" y1="10" x2="25" y2="34"/><line class="icon" x1="45" y1="10" x2="45" y2="34"/><line class="icon" x1="65" y1="10" x2="65" y2="34"/>`],
+            [`<path class="icon" d="M 45 8 L 70 22 L 45 36 L 20 22 Z"/>`,
+             `<line class="icon" x1="15" y1="22" x2="75" y2="22"/>`],
+            [`<path class="icon" d="M 45 8 L 70 36 L 20 36 Z"/>`,
+             `<path class="icon" d="M 10 30 L 25 10 L 45 30 L 65 10 L 80 30"/>`],
+            [`<circle class="point" cx="30" cy="14" r="4"/><circle class="point" cx="60" cy="14" r="4"/><circle class="point" cx="30" cy="30" r="4"/><circle class="point" cx="60" cy="30" r="4"/>`,
+             `<rect class="icon" x="25" y="8" width="40" height="28" rx="3"/>`],
+        ];
+
+        const FACE_TRANSFORMS = [
+            'rotateY(0deg)    translateZ(60px)',
+            'rotateY(180deg)  translateZ(60px)',
+            'rotateY(90deg)   translateZ(60px)',
+            'rotateY(-90deg)  translateZ(60px)',
+            'rotateX(90deg)   translateZ(60px)',
+            'rotateX(-90deg)  translateZ(60px)',
+        ];
+        const FACE_NAMES = ['front', 'back', 'right', 'left', 'top', 'bottom'];
+
+        const cubeEl = document.getElementById('cube');
+        const labelEl = document.getElementById('faceLabel');
+        const scene = document.getElementById('scene');
+        const faceRotations = [0, 0, 0, 0, 0, 0];
+        const faceEls = [];
+        const innerEls = [];
+
+        // ─── Build faces ───
+        DOMINOS.forEach((pair, i) => {
+            const face = document.createElement('div');
+            face.className = 'face';
+            face.style.transform = FACE_TRANSFORMS[i];
+
+            const inner = document.createElement('div');
+            inner.className = 'domino-inner';
+            inner.innerHTML = `<svg viewBox="0 0 90 90">
+                <line class="separator" x1="0" y1="45" x2="90" y2="45"/>
+                <g>${pair[0]}</g>
+                <g transform="translate(0, 45)">${pair[1]}</g>
+            </svg>`;
+
+            face.appendChild(inner);
+            cubeEl.appendChild(face);
+            faceEls.push(face);
+            innerEls.push(inner);
+        });
+
+        // ─── Navigation ───
+        const NAV = {
+            front:  { left: 'left',  right: 'right', up: 'top',   down: 'bottom' },
+            back:   { left: 'right', right: 'left',  up: 'top',   down: 'bottom' },
+            right:  { left: 'front', right: 'back',  up: 'top',   down: 'bottom' },
+            left:   { left: 'back',  right: 'front', up: 'top',   down: 'bottom' },
+            top:    { left: 'left',  right: 'right', up: 'back',  down: 'front' },
+            bottom: { left: 'left',  right: 'right', up: 'front', down: 'back' },
+        };
+
+        let currentFace = 'front';
+        let cubeRx = 0, cubeRy = 0;
+        let transitioning = false;
+
+        function navigate(dir) {
+            if (transitioning) return;
+            const target = NAV[currentFace]?.[dir];
+            if (!target) return;
+
+            transitioning = true;
+
+            switch (dir) {
+                case 'right': cubeRy -= 90; break;
+                case 'left':  cubeRy += 90; break;
+                case 'up':    cubeRx += 90; break;
+                case 'down':  cubeRx -= 90; break;
+            }
+
+            cubeEl.style.transform = `rotateX(${cubeRx}deg) rotateY(${cubeRy}deg)`;
+            currentFace = target;
+            labelEl.textContent = target;
+
+            setTimeout(() => { transitioning = false; }, 900);
+        }
+
+        function rotateFace(faceIndex) {
+            faceRotations[faceIndex] += 90;
+            innerEls[faceIndex].style.transform = `rotate(${faceRotations[faceIndex]}deg)`;
+
+            const face = faceEls[faceIndex];
+            face.classList.remove('clicked');
+            void face.offsetWidth;
+            face.classList.add('clicked');
+            setTimeout(() => face.classList.remove('clicked'), 450);
+        }
+
+        // ─── Long Press detection ───
+        const LONG_PRESS_MS = 400;
+        let pressTimer = null;
+        let pressStartPos = { x: 0, y: 0 };
+        let longPressTriggered = false;
+        let pressingFace = null;
+
+        function startPress(e, faceIndex) {
+            pressStartPos = { x: e.clientX, y: e.clientY };
+            longPressTriggered = false;
+            pressingFace = faceIndex;
+
+            // Visual feedback
+            if (faceIndex !== null) {
+                faceEls[faceIndex].classList.add('pressing');
+            }
+
+            pressTimer = setTimeout(() => {
+                longPressTriggered = true;
+                if (faceIndex !== null) {
+                    rotateFace(faceIndex);
+                    faceEls[faceIndex].classList.remove('pressing');
+                }
+            }, LONG_PRESS_MS);
+        }
+
+        function cancelPress() {
+            clearTimeout(pressTimer);
+            pressTimer = null;
+            if (pressingFace !== null) {
+                faceEls[pressingFace].classList.remove('pressing');
+            }
+            pressingFace = null;
+        }
+
+        function endPress(e) {
+            clearTimeout(pressTimer);
+            if (pressingFace !== null) {
+                faceEls[pressingFace].classList.remove('pressing');
+            }
+
+            const dx = e.clientX - pressStartPos.x;
+            const dy = e.clientY - pressStartPos.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            // Si le doigt a bougé pendant le press → c'est un swipe, pas un long press
+            if (dist > 15 && !longPressTriggered) {
+                cancelPress();
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    navigate(dx > 0 ? 'left' : 'right');
+                } else {
+                    navigate(dy > 0 ? 'down' : 'up');
+                }
+            }
+
+            pressingFace = null;
+        }
+
+        // ─── Pointer events sur la scène ───
+        scene.addEventListener('pointerdown', (e) => {
+            const face = e.target.closest('.face');
+            const faceIndex = face ? parseInt(faceEls.indexOf(face)) : null;
+
+            // Annuler le long press si on bouge trop
+            const moveHandler = (ev) => {
+                const mx = ev.clientX - pressStartPos.x;
+                const my = ev.clientY - pressStartPos.y;
+                if (Math.sqrt(mx * mx + my * my) > 10) {
+                    cancelPress();
+                    scene.removeEventListener('pointermove', moveHandler);
+                }
+            };
+
+            scene.addEventListener('pointermove', moveHandler);
+            scene.addEventListener('pointerup', () => {
+                scene.removeEventListener('pointermove', moveHandler);
+            }, { once: true });
+
+            startPress(e, faceIndex);
+        });
+
+        scene.addEventListener('pointerup', (e) => {
+            endPress(e);
+        });
+
+        scene.addEventListener('pointercancel', () => {
+            cancelPress();
+        });
+
+        // ─── Scroll / Wheel (trackpad) ───
+        let scrollAccX = 0, scrollAccY = 0;
+        let scrollCooldown = false;
+        let scrollResetTimer = null;
+        const SCROLL_THRESHOLD = 40;
+
+        scene.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            if (scrollCooldown) return;
+
+            scrollAccX += e.deltaX;
+            scrollAccY += e.deltaY;
+
+            clearTimeout(scrollResetTimer);
+            scrollResetTimer = setTimeout(() => { scrollAccX = 0; scrollAccY = 0; }, 200);
+
+            if (Math.abs(scrollAccX) > SCROLL_THRESHOLD && Math.abs(scrollAccX) > Math.abs(scrollAccY)) {
+                navigate(scrollAccX > 0 ? 'right' : 'left');
+                scrollAccX = 0; scrollAccY = 0;
+                scrollCooldown = true;
+                setTimeout(() => { scrollCooldown = false; }, 600);
+            } else if (Math.abs(scrollAccY) > SCROLL_THRESHOLD) {
+                navigate(scrollAccY > 0 ? 'down' : 'up');
+                scrollAccX = 0; scrollAccY = 0;
+                scrollCooldown = true;
+                setTimeout(() => { scrollCooldown = false; }, 600);
+            }
+        }, { passive: false });
+
+        // ─── Keyboard (dev/debug) ───
+        document.addEventListener('keydown', (e) => {
+            switch (e.key) {
+                case 'ArrowLeft':  navigate('left');  break;
+                case 'ArrowRight': navigate('right'); break;
+                case 'ArrowUp':    navigate('up');    e.preventDefault(); break;
+                case 'ArrowDown':  navigate('down');  e.preventDefault(); break;
             }
         });
     </script>
