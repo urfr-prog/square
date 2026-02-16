@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Domino Cube — 6 Faces</title>
+    <title>Domino Cube — V10</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -20,40 +20,40 @@
             -webkit-user-select: none;
         }
 
-        h1 {
-            color: rgba(126, 200, 227, 0.35);
-            font-weight: 200;
-            font-size: 0.8rem;
-            letter-spacing: 0.5em;
-            text-transform: uppercase;
-            margin-bottom: 28px;
+        .column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            height: 100vh;
         }
 
         .scene {
-            width: 300px;
-            height: 300px;
+            width: 160px;
+            height: 140px;
             perspective: 700px;
             position: relative;
             touch-action: none;
         }
 
         .cube {
-            width: 120px;
-            height: 120px;
+            width: 110px;
+            height: 110px;
             position: absolute;
             top: 50%;
             left: 50%;
-            margin-left: -60px;
-            margin-top: -60px;
+            margin-left: -55px;
+            margin-top: -55px;
             transform-style: preserve-3d;
             transition: transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
         .face {
             position: absolute;
-            width: 120px;
-            height: 120px;
-            border-radius: 16px;
+            width: 110px;
+            height: 110px;
+            border-radius: 14px;
             overflow: hidden;
             backface-visibility: hidden;
             background: #0e0f18;
@@ -65,12 +65,12 @@
 
         .face svg { width: 100%; height: 100%; display: block; }
 
-        .face-front  { transform: rotateY(0deg)    translateZ(60px); }
-        .face-back   { transform: rotateY(180deg)   translateZ(60px); }
-        .face-right  { transform: rotateY(90deg)    translateZ(60px); }
-        .face-left   { transform: rotateY(-90deg)   translateZ(60px); }
-        .face-top    { transform: rotateX(90deg)    translateZ(60px); }
-        .face-bottom { transform: rotateX(-90deg)   translateZ(60px); }
+        .face-front  { transform: rotateY(0deg)    translateZ(55px); }
+        .face-back   { transform: rotateY(180deg)   translateZ(55px); }
+        .face-right  { transform: rotateY(90deg)    translateZ(55px); }
+        .face-left   { transform: rotateY(-90deg)   translateZ(55px); }
+        .face-top    { transform: rotateX(90deg)    translateZ(55px); }
+        .face-bottom { transform: rotateX(-90deg)   translateZ(55px); }
 
         .face svg .separator { stroke: rgba(126,200,227,0.3); stroke-width: 0.8; }
         .face svg line.icon, .face svg path.icon,
@@ -88,39 +88,14 @@
         .scene.pressing .cube {
             filter: brightness(1.15);
         }
-
-        @keyframes spinFlash {
-            0%   { box-shadow: 0 0 30px rgba(126,200,227,0.15); }
-            50%  { box-shadow: 0 0 50px rgba(126,200,227,0.4); }
-            100% { box-shadow: 0 0 30px rgba(126,200,227,0.15); }
-        }
-        .glow.flash { animation: spinFlash 0.6s ease; }
-
-        .glow {
-            width: 90px; height: 10px; border-radius: 50%;
-            background: rgba(126,200,227,0.15);
-            box-shadow: 0 0 30px rgba(126,200,227,0.15);
-            margin-top: 24px;
-        }
-
-        .face-label {
-            color: rgba(126,200,227,0.25);
-            font-size: 0.7rem; letter-spacing: 0.2em; margin-top: 16px;
-        }
-        .hint {
-            color: rgba(180,180,190,0.2);
-            font-size: 0.6rem; margin-top: 8px;
-        }
     </style>
 </head>
 <body>
-    <h1>Domino Cube</h1>
-    <div class="scene" id="scene">
-        <div class="cube" id="cube"></div>
+    <div class="column">
+        <div class="scene" id="scene0"><div class="cube" id="cube0"></div></div>
+        <div class="scene" id="scene1"><div class="cube" id="cube1"></div></div>
+        <div class="scene" id="scene2"><div class="cube" id="cube2"></div></div>
     </div>
-    <div class="glow" id="glow"></div>
-    <div class="face-label" id="faceLabel">front</div>
-    <div class="hint">← → ↑ ↓ / swipe = naviguer · clic / espace = rotation face</div>
 
     <script>
         const DOMINOS = [
@@ -140,49 +115,97 @@
 
         const FACE_CLASSES = ['face-front','face-back','face-right','face-left','face-top','face-bottom'];
 
-        const cubeEl = document.getElementById('cube');
-        const labelEl = document.getElementById('faceLabel');
-        const scene = document.getElementById('scene');
-        const glowEl = document.getElementById('glow');
-
-        // Build faces
-        DOMINOS.forEach((pair, i) => {
-            const face = document.createElement('div');
-            face.className = 'face ' + FACE_CLASSES[i];
-            face.innerHTML = `<svg viewBox="0 0 90 90">
-                <line class="separator" x1="0" y1="45" x2="90" y2="45"/>
-                <g>${pair[0]}</g>
-                <g transform="translate(0, 45)">${pair[1]}</g>
-            </svg>`;
-            cubeEl.appendChild(face);
-        });
-
-        // ══════════════════════════════════════════════
-        //  ROTATION MATRIX approach
-        //  We maintain a 3x3 rotation matrix.
-        //  Each navigation/spin multiplies a 90° rotation
-        //  onto the current matrix (post-multiply = local space).
-        //  Then we convert the matrix to CSS matrix3d.
-        // ══════════════════════════════════════════════
-
-        // Current rotation matrix (3x3, row-major)
-        // Identity = no rotation
-        let mat = [
-            [1, 0, 0],
-            [0, 1, 0],
-            [0, 0, 1]
+        // 3 ordonnancements différents des faces
+        const FACE_ORDERS = [
+            [0, 1, 2, 3, 4, 5],  // Cube 1 : original
+            [3, 5, 0, 4, 1, 2],  // Cube 2 : mélangé
+            [5, 2, 4, 1, 3, 0],  // Cube 3 : mélangé différemment
         ];
 
-        // Target matrix (what we're animating toward)
-        let targetMat = [
-            [1, 0, 0],
-            [0, 1, 0],
-            [0, 0, 1]
-        ];
+        // State per cube
+        const cubes = [];
 
-        let transitioning = false;
+        for (let c = 0; c < 3; c++) {
+            const cubeEl = document.getElementById('cube' + c);
+            const sceneEl = document.getElementById('scene' + c);
+            const order = FACE_ORDERS[c];
 
-        // Multiply two 3x3 matrices
+            // Build faces with reordered dominos
+            order.forEach((dominoIdx, faceIdx) => {
+                const pair = DOMINOS[dominoIdx];
+                const face = document.createElement('div');
+                face.className = 'face ' + FACE_CLASSES[faceIdx];
+                face.innerHTML = `<svg viewBox="0 0 90 90">
+                    <line class="separator" x1="0" y1="45" x2="90" y2="45"/>
+                    <g>${pair[0]}</g>
+                    <g transform="translate(0, 45)">${pair[1]}</g>
+                </svg>`;
+                cubeEl.appendChild(face);
+            });
+
+            const state = {
+                el: cubeEl,
+                scene: sceneEl,
+                mat: [[1,0,0],[0,1,0],[0,0,1]],
+                targetMat: [[1,0,0],[0,1,0],[0,0,1]],
+                transitioning: false
+            };
+            cubes.push(state);
+
+            // Pointer events per scene
+            let pointerStart = null;
+            let pointerMoved = false;
+
+            sceneEl.addEventListener('pointerdown', (e) => {
+                pointerStart = { x: e.clientX, y: e.clientY };
+                pointerMoved = false;
+                sceneEl.setPointerCapture(e.pointerId);
+            });
+
+            sceneEl.addEventListener('pointermove', (e) => {
+                if (!pointerStart) return;
+                if (Math.hypot(e.clientX - pointerStart.x, e.clientY - pointerStart.y) > 10) pointerMoved = true;
+            });
+
+            sceneEl.addEventListener('pointerup', (e) => {
+                if (!pointerStart) return;
+                const dx = e.clientX - pointerStart.x;
+                const dy = e.clientY - pointerStart.y;
+                const adx = Math.abs(dx), ady = Math.abs(dy);
+
+                if (!pointerMoved || Math.max(adx, ady) < 15) {
+                    spinCube(state);
+                } else {
+                    if (adx > ady) navigateCube(state, dx > 0 ? 'left' : 'right');
+                    else navigateCube(state, dy > 0 ? 'up' : 'down');
+                }
+                pointerStart = null;
+            });
+
+            sceneEl.addEventListener('pointercancel', () => { pointerStart = null; });
+
+            // Wheel per scene
+            let accX = 0, accY = 0, cooldown = false, resetTimer = null;
+            sceneEl.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                if (cooldown) return;
+                accX += e.deltaX; accY += e.deltaY;
+                clearTimeout(resetTimer);
+                resetTimer = setTimeout(() => { accX = 0; accY = 0; }, 150);
+                const ax = Math.abs(accX), ay = Math.abs(accY), T = 30;
+                if (ax > T && ax >= ay) {
+                    navigateCube(state, accX > 0 ? 'right' : 'left');
+                    accX = 0; accY = 0; cooldown = true;
+                    setTimeout(() => { cooldown = false; }, 400);
+                } else if (ay > T) {
+                    navigateCube(state, accY > 0 ? 'down' : 'up');
+                    accX = 0; accY = 0; cooldown = true;
+                    setTimeout(() => { cooldown = false; }, 400);
+                }
+            }, { passive: false });
+        }
+
+        // Matrix math
         function mul(A, B) {
             const R = [[0,0,0],[0,0,0],[0,0,0]];
             for (let i = 0; i < 3; i++)
@@ -192,7 +215,6 @@
             return R;
         }
 
-        // Round near-integer values to avoid floating point drift
         function cleanMat(M) {
             return M.map(row => row.map(v => {
                 const r = Math.round(v);
@@ -200,204 +222,54 @@
             }));
         }
 
-        // 90° rotation matrices (exact integers, no trig needed)
-        // rotateX(+90°): Y→Z, Z→-Y
         function rotX90()  { return [[ 1, 0, 0],[ 0, 0,-1],[ 0, 1, 0]]; }
-        // rotateX(-90°): Y→-Z, Z→Y
         function rotXn90() { return [[ 1, 0, 0],[ 0, 0, 1],[ 0,-1, 0]]; }
-        // rotateY(+90°): X→-Z, Z→X
         function rotY90()  { return [[ 0, 0, 1],[ 0, 1, 0],[-1, 0, 0]]; }
-        // rotateY(-90°): X→Z, Z→-X
         function rotYn90() { return [[ 0, 0,-1],[ 0, 1, 0],[ 1, 0, 0]]; }
-        // rotateZ(-90°): X→Y, Y→-X (clockwise from viewer)
         function rotZn90() { return [[ 0, 1, 0],[-1, 0, 0],[ 0, 0, 1]]; }
-        // rotateZ(+90°): X→-Y, Y→X
-        function rotZ90()  { return [[ 0,-1, 0],[ 1, 0, 0],[ 0, 0, 1]]; }
 
-        // Convert 3x3 rotation matrix to CSS matrix3d string
         function matToCSS(M) {
-            // CSS matrix3d is column-major
-            // matrix3d(m11,m21,m31,0, m12,m22,m32,0, m13,m23,m33,0, tx,ty,tz,1)
             return `matrix3d(${M[0][0]},${M[1][0]},${M[2][0]},0,${M[0][1]},${M[1][1]},${M[2][1]},0,${M[0][2]},${M[1][2]},${M[2][2]},0,0,0,0,1)`;
         }
 
-        function applyTransform() {
-            cubeEl.style.transform = matToCSS(targetMat);
-        }
-
-        // Determine which face is facing the viewer (Z+ direction)
-        // We check which original axis now points toward +Z
-        function detectFace(M) {
-            // The face visible is the one whose normal now points in +Z direction
-            // Original face normals:
-            // front:  (0, 0, 1)
-            // back:   (0, 0,-1)
-            // right:  (1, 0, 0)
-            // left:   (-1, 0, 0)
-            // top:    (0,-1, 0)  (CSS Y is down, so top face has rotateX(90°) = normal points -Y in CSS space... 
-            //                     but actually in our setup, top face normal is (0, -1, 0) before rotation? No.)
-            
-            // Let's think about this differently.
-            // The cube's transform is M applied. A point on the front face (0,0,1) gets mapped to M*(0,0,1) = column 2 of M.
-            // We need to find which original face direction maps closest to (0,0,1) after transform.
-            // M * original_normal = (0,0,1) means original_normal = M^-1 * (0,0,1)
-            // For rotation matrix, M^-1 = M^T
-            // So original_normal = M^T * (0,0,1) = third row of M = [M[2][0], M[2][1], M[2][2]]
-
-            const nz = [M[2][0], M[2][1], M[2][2]]; // which original direction now faces Z+
-            
-            // Match against face normals:
-            // front:  [0, 0, 1]
-            // back:   [0, 0,-1]
-            // right:  [1, 0, 0]
-            // left:   [-1,0, 0]
-            // top:    [0,-1, 0]  (rotateX(90°) means top face normal points up in world = -Y in CSS)
-            // bottom: [0, 1, 0]  (rotateX(-90°) means bottom face normal points +Y in CSS)
-
-            if (nz[2] ===  1) return 'front';
-            if (nz[2] === -1) return 'back';
-            if (nz[0] ===  1) return 'right';
-            if (nz[0] === -1) return 'left';
-            if (nz[1] === -1) return 'top';
-            if (nz[1] ===  1) return 'bottom';
-            return '?';
-        }
-
-        // POST-multiply = rotation in LOCAL cube space
-        // This is what we want: arrows always correspond to viewer's perspective
-        // because local-Y is always the cube's vertical, local-X is horizontal, etc.
-        //
-        // WAIT — that's wrong. Local rotations follow the cube, not the viewer.
-        // If the cube is rotated 90° around Y, then local-X is no longer viewer-right.
-        //
-        // We need PRE-multiply = rotation in WORLD/VIEWER space.
-        // World-Y rotation = left/right from viewer's perspective, always.
-        // World-X rotation = up/down from viewer's perspective, always.
-
-        function addRotation(rotMatrix) {
-            if (transitioning) return;
-            transitioning = true;
-
-            // PRE-multiply: new rotation in world space
-            targetMat = cleanMat(mul(rotMatrix, targetMat));
-            applyTransform();
-            labelEl.textContent = detectFace(targetMat);
-
+        function addRotation(state, rotMatrix) {
+            if (state.transitioning) return;
+            state.transitioning = true;
+            state.targetMat = cleanMat(mul(rotMatrix, state.targetMat));
+            state.el.style.transform = matToCSS(state.targetMat);
             setTimeout(() => {
-                mat = targetMat.map(r => [...r]);
-                transitioning = false;
+                state.mat = state.targetMat.map(r => [...r]);
+                state.transitioning = false;
             }, 700);
         }
 
-        // Navigation: viewer-centric directions
-        // Right arrow: cube appears to turn right → content moves left → we see the right face
-        //   = rotate around world Y by -90°
-        // Left arrow: see the left face = rotate world Y by +90°
-        // Up arrow: see the top face = rotate world X by +90°
-        // Down arrow: see the bottom face = rotate world X by -90°
-        function navigate(dir) {
+        function navigateCube(state, dir) {
             switch (dir) {
-                case 'right': addRotation(rotYn90()); break;
-                case 'left':  addRotation(rotY90());  break;
-                case 'up':    addRotation(rotXn90()); break;
-                case 'down':  addRotation(rotX90());  break;
+                case 'right': addRotation(state, rotYn90()); break;
+                case 'left':  addRotation(state, rotY90());  break;
+                case 'up':    addRotation(state, rotXn90()); break;
+                case 'down':  addRotation(state, rotX90());  break;
             }
         }
 
-        // Long press = spin the visible face clockwise
-        // This is a rotation around the Z axis (viewer's axis) = world Z
-        function spinCube() {
-            addRotation(rotZn90());
-            glowEl.classList.remove('flash');
-            void glowEl.offsetWidth;
-            glowEl.classList.add('flash');
+        function spinCube(state) {
+            addRotation(state, rotZn90());
         }
 
-        // ══════════════════════════════════════
-        //  CLIC / TAP = spin, SWIPE = navigation
-        // ══════════════════════════════════════
+        // Keyboard controls on focused/hovered cube
+        let activeCube = cubes[1]; // default middle cube
 
-        let pointerStart = null;
-        let pointerMoved = false;
-
-        scene.addEventListener('pointerdown', (e) => {
-            pointerStart = { x: e.clientX, y: e.clientY };
-            pointerMoved = false;
-            scene.setPointerCapture(e.pointerId);
+        cubes.forEach(state => {
+            state.scene.addEventListener('pointerenter', () => { activeCube = state; });
         });
 
-        scene.addEventListener('pointermove', (e) => {
-            if (!pointerStart) return;
-            const d = Math.hypot(e.clientX - pointerStart.x, e.clientY - pointerStart.y);
-            if (d > 10) pointerMoved = true;
-        });
-
-        scene.addEventListener('pointerup', (e) => {
-            if (!pointerStart) return;
-            const dx = e.clientX - pointerStart.x;
-            const dy = e.clientY - pointerStart.y;
-            const adx = Math.abs(dx);
-            const ady = Math.abs(dy);
-
-            if (!pointerMoved || Math.max(adx, ady) < 15) {
-                // Clic simple → spin
-                spinCube();
-            } else {
-                // Swipe → navigation
-                if (adx > ady) {
-                    navigate(dx > 0 ? 'left' : 'right');
-                } else {
-                    navigate(dy > 0 ? 'up' : 'down');
-                }
-            }
-            pointerStart = null;
-        });
-
-        scene.addEventListener('pointercancel', () => { pointerStart = null; });
-
-        // ══════════════════════════════════════
-        //  SCROLL / WHEEL (trackpad navigation)
-        // ══════════════════════════════════════
-
-        let accX = 0, accY = 0;
-        let cooldown = false;
-        let resetTimer = null;
-
-        scene.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            if (cooldown) return;
-
-            accX += e.deltaX;
-            accY += e.deltaY;
-
-            clearTimeout(resetTimer);
-            resetTimer = setTimeout(() => { accX = 0; accY = 0; }, 150);
-
-            const ax = Math.abs(accX);
-            const ay = Math.abs(accY);
-            const T = 30;
-
-            if (ax > T && ax >= ay) {
-                navigate(accX > 0 ? 'right' : 'left');
-                accX = 0; accY = 0;
-                cooldown = true;
-                setTimeout(() => { cooldown = false; }, 400);
-            } else if (ay > T) {
-                navigate(accY > 0 ? 'down' : 'up');
-                accX = 0; accY = 0;
-                cooldown = true;
-                setTimeout(() => { cooldown = false; }, 400);
-            }
-        }, { passive: false });
-
-        // ── Keyboard ──
         document.addEventListener('keydown', (e) => {
             switch (e.key) {
-                case 'ArrowRight': navigate('right'); break;
-                case 'ArrowLeft':  navigate('left');  break;
-                case 'ArrowUp':    navigate('up');    e.preventDefault(); break;
-                case 'ArrowDown':  navigate('down');  e.preventDefault(); break;
-                case ' ':          spinCube();         e.preventDefault(); break;
+                case 'ArrowRight': navigateCube(activeCube, 'right'); break;
+                case 'ArrowLeft':  navigateCube(activeCube, 'left');  break;
+                case 'ArrowUp':    navigateCube(activeCube, 'up');    e.preventDefault(); break;
+                case 'ArrowDown':  navigateCube(activeCube, 'down');  e.preventDefault(); break;
+                case ' ':          spinCube(activeCube);               e.preventDefault(); break;
             }
         });
     </script>
