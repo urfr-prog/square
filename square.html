@@ -347,7 +347,7 @@
                 if (adx > ady) {
                     navigate(dx > 0 ? 'left' : 'right');
                 } else {
-                    navigate(dy > 0 ? 'down' : 'up');
+                    navigate(dy > 0 ? 'up' : 'down');
                 }
             }
             pointerStart = null;
@@ -383,7 +383,7 @@
                 cooldown = true;
                 setTimeout(() => { cooldown = false; }, 400);
             } else if (ay > T) {
-                navigate(accY > 0 ? 'up' : 'down');
+                navigate(accY > 0 ? 'down' : 'up');
                 accX = 0; accY = 0;
                 cooldown = true;
                 setTimeout(() => { cooldown = false; }, 400);
