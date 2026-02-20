@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Domino Cube — V12 (3×3)</title>
+    <title>Domino Cube — V11</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -11,6 +11,7 @@
             background-color: #0c0d14;
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
@@ -19,40 +20,40 @@
             -webkit-user-select: none;
         }
 
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(3, 140px);
-            grid-template-rows: repeat(3, 130px);
-            gap: 4px;
+        .column {
+            display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-items: center;
+            justify-content: center;
+            gap: 8px;
+            height: 100vh;
         }
 
         .scene {
-            width: 140px;
-            height: 130px;
-            perspective: 600px;
+            width: 160px;
+            height: 140px;
+            perspective: 700px;
             position: relative;
             touch-action: none;
         }
 
         .cube {
-            width: 100px;
-            height: 100px;
+            width: 110px;
+            height: 110px;
             position: absolute;
             top: 50%;
             left: 50%;
-            margin-left: -50px;
-            margin-top: -50px;
+            margin-left: -55px;
+            margin-top: -55px;
             transform-style: preserve-3d;
             transition: transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
         .face {
             position: absolute;
-            width: 100px;
-            height: 100px;
-            border-radius: 12px;
+            width: 110px;
+            height: 110px;
+            border-radius: 14px;
             overflow: hidden;
             backface-visibility: hidden;
             background: #0e0f18;
@@ -64,12 +65,12 @@
 
         .face svg { width: 100%; height: 100%; display: block; }
 
-        .face-front  { transform: rotateY(0deg)    translateZ(50px); }
-        .face-back   { transform: rotateY(180deg)   translateZ(50px); }
-        .face-right  { transform: rotateY(90deg)    translateZ(50px); }
-        .face-left   { transform: rotateY(-90deg)   translateZ(50px); }
-        .face-top    { transform: rotateX(90deg)    translateZ(50px); }
-        .face-bottom { transform: rotateX(-90deg)   translateZ(50px); }
+        .face-front  { transform: rotateY(0deg)    translateZ(55px); }
+        .face-back   { transform: rotateY(180deg)   translateZ(55px); }
+        .face-right  { transform: rotateY(90deg)    translateZ(55px); }
+        .face-left   { transform: rotateY(-90deg)   translateZ(55px); }
+        .face-top    { transform: rotateX(90deg)    translateZ(55px); }
+        .face-bottom { transform: rotateX(-90deg)   translateZ(55px); }
 
         .face svg .separator { stroke: rgba(126,200,227,0.3); stroke-width: 0.8; }
         .face svg line.icon, .face svg path.icon,
@@ -83,10 +84,18 @@
             fill: #7ec8e3; stroke: none;
             filter: drop-shadow(0 0 4px rgba(126,200,227,0.5));
         }
+
+        .scene.pressing .cube {
+            filter: brightness(1.15);
+        }
     </style>
 </head>
 <body>
-    <div class="grid" id="grid"></div>
+    <div class="column">
+        <div class="scene" id="scene0"><div class="cube" id="cube0"></div></div>
+        <div class="scene" id="scene1"><div class="cube" id="cube1"></div></div>
+        <div class="scene" id="scene2"><div class="cube" id="cube2"></div></div>
+    </div>
 
     <script>
         const DOMINOS = [
@@ -106,39 +115,27 @@
 
         const FACE_CLASSES = ['face-front','face-back','face-right','face-left','face-top','face-bottom'];
 
+        // Normale de chaque face dans l'espace local du cube
         const FACE_NORMALS = [
             [0, 0, 1],   // front
             [0, 0, -1],  // back
             [1, 0, 0],   // right
             [-1, 0, 0],  // left
-            [0, -1, 0],  // top
+            [0, -1, 0],  // top (rotateX(90deg) => normale pointe vers -Y local)
             [0, 1, 0],   // bottom
         ];
 
-        // 9 ordonnancements différents des faces pour chaque cube
         const FACE_ORDERS = [
             [0, 1, 2, 3, 4, 5],
             [3, 5, 0, 4, 1, 2],
             [5, 2, 4, 1, 3, 0],
-            [2, 0, 5, 1, 3, 4],
-            [1, 4, 3, 5, 0, 2],
-            [4, 3, 1, 0, 2, 5],
-            [3, 2, 0, 5, 4, 1],
-            [0, 5, 4, 2, 1, 3],
-            [2, 1, 3, 4, 5, 0],
         ];
 
-        const grid = document.getElementById('grid');
         const cubes = [];
 
-        for (let c = 0; c < 9; c++) {
-            const sceneEl = document.createElement('div');
-            sceneEl.className = 'scene';
-            const cubeEl = document.createElement('div');
-            cubeEl.className = 'cube';
-            sceneEl.appendChild(cubeEl);
-            grid.appendChild(sceneEl);
-
+        for (let c = 0; c < 3; c++) {
+            const cubeEl = document.getElementById('cube' + c);
+            const sceneEl = document.getElementById('scene' + c);
             const order = FACE_ORDERS[c];
             const faceEls = [];
 
@@ -165,7 +162,6 @@
             };
             cubes.push(state);
 
-            // Pointer events
             let pointerStart = null;
             let pointerMoved = false;
 
@@ -173,7 +169,6 @@
                 pointerStart = { x: e.clientX, y: e.clientY };
                 pointerMoved = false;
                 sceneEl.setPointerCapture(e.pointerId);
-                activeCube = state;
             });
 
             sceneEl.addEventListener('pointermove', (e) => {
@@ -216,8 +211,6 @@
                     setTimeout(() => { cooldown = false; }, 400);
                 }
             }, { passive: false });
-
-            sceneEl.addEventListener('pointerenter', () => { activeCube = state; });
         }
 
         // Matrix math
@@ -247,6 +240,7 @@
             return `matrix3d(${M[0][0]},${M[1][0]},${M[2][0]},0,${M[0][1]},${M[1][1]},${M[2][1]},0,${M[0][2]},${M[1][2]},${M[2][2]},0,0,0,0,1)`;
         }
 
+        // Parse matrix3d from computed style pour suivre la transition en temps réel
         function parseMatrix3d(str) {
             const match = str.match(/matrix3d\((.+)\)/);
             if (!match) return null;
@@ -258,6 +252,7 @@
             ];
         }
 
+        // Transformer une normale par la matrice de rotation
         function transformNormal(mat, n) {
             return [
                 mat[0][0]*n[0] + mat[0][1]*n[1] + mat[0][2]*n[2],
@@ -266,14 +261,19 @@
             ];
         }
 
+        // Mettre à jour le halo de chaque face selon son orientation vers la caméra
         function updateGlow(state, mat) {
             state.faceEls.forEach((faceEl, idx) => {
-                const wn = transformNormal(mat, FACE_NORMALS[idx]);
-                const intensity = Math.max(0, wn[2]);
+                const normal = FACE_NORMALS[idx];
+                const wn = transformNormal(mat, normal);
+                // dot product avec direction caméra [0, 0, 1]
+                const dot = wn[2];
+                const intensity = Math.max(0, dot);
 
-                const outerR = intensity * 30;
+                // Halo progressif inspiré du flip-3d
+                const outerR = intensity * 35;
                 const outerA = intensity * 0.25;
-                const midR = intensity * 12;
+                const midR = intensity * 15;
                 const midA = intensity * 0.15;
                 const innerA = intensity * 0.1;
                 const borderA = 0.25 + intensity * 0.45;
@@ -281,11 +281,12 @@
                 faceEl.style.boxShadow =
                     `0 0 ${outerR}px rgba(126,200,227,${outerA}),` +
                     `0 0 ${midR}px rgba(126,200,227,${midA}),` +
-                    `inset 0 0 25px rgba(126,200,227,${innerA})`;
+                    `inset 0 0 30px rgba(126,200,227,${innerA})`;
                 faceEl.style.borderColor = `rgba(126,200,227,${borderA})`;
             });
         }
 
+        // Boucle d'animation : lit le style computed pour suivre la transition CSS en temps réel
         function animateGlow() {
             cubes.forEach(state => {
                 const computed = getComputedStyle(state.el).transform;
@@ -320,8 +321,10 @@
             addRotation(state, rotZn90());
         }
 
-        // Keyboard
-        let activeCube = cubes[4]; // centre par défaut
+        let activeCube = cubes[1];
+        cubes.forEach(state => {
+            state.scene.addEventListener('pointerenter', () => { activeCube = state; });
+        });
 
         document.addEventListener('keydown', (e) => {
             switch (e.key) {
